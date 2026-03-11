@@ -17,8 +17,8 @@
 
   <ItemGroup>
     <Folder Include="Controllers\" />
-    <Folder Include="Response\" />
     <Folder Include="Requests\" />
+    <Folder Include="Response\" />
   </ItemGroup>
 
 </Project>
