@@ -38,6 +38,9 @@ public class AppDbContext : DbContext
 
             entity.Property(r => r.Terreno)
                 .HasConversion<string>();
+
+            entity.Property(r => r.CivilizacaoId)
+                 .IsRequired();
         });
 
         modelBuilder.Entity<EventoCivilizacional>(entity =>

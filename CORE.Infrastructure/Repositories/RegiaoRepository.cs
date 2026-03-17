@@ -14,10 +14,10 @@ public class RegiaoRepository : IRegiaoRepository
         this.context = context;
     }
 
-    public async Task<IEnumerable<Regiao>> GetControladasAsync()
+    public async Task<IEnumerable<Regiao>> GetControladasAsync(Guid civilizacaoId)
     {
         return await context.Regioes
-            .Where(r => r.Controlada)
+            .Where(r => r.Controlada && r.CivilizacaoId == civilizacaoId)
             .ToListAsync();
     }
 

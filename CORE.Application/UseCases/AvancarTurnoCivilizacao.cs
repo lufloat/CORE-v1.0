@@ -23,7 +23,7 @@ public class AvancarTurnoCivilizacao
         if (civilizacao is null)
             throw new Exception("Civilização não encontrada.");
 
-        var regioesControladas = await regiaoRepository.GetControladasAsync();
+        var regioesControladas = await regiaoRepository.GetControladasAsync(civilizacaoId);
 
         civilizacao.AvancarTurno(regioesControladas);
 

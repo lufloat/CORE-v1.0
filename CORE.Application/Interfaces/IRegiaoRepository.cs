@@ -4,7 +4,7 @@ namespace CORE.Application.Interfaces;
 
 public interface IRegiaoRepository
 {
-    Task<IEnumerable<Regiao>> GetControladasAsync();
+    Task<IEnumerable<Regiao>> GetControladasAsync(Guid civilizacaoId);
     Task AddAsync(Regiao regiao);
     Task UpdateAsync(Regiao regiao);
 }

@@ -13,6 +13,7 @@ namespace CORE.Domain.Entities
         public int ProducaoMadeira { get; private set; }
         public int ProducaoPedra { get; private set; }
         public int NivelDesenvolvimento { get; private set; }
+        public Guid CivilizacaoId { get; private set; }
 
         public Regiao(string nome, TipoTerreno terreno)
         {
@@ -21,6 +22,7 @@ namespace CORE.Domain.Entities
             Terreno = terreno;
             Controlada = false;
             NivelDesenvolvimento = 0;
+            CivilizacaoId = civilizacaoId;
             DefinirProducaoBase();
         }
 
@@ -56,6 +58,15 @@ namespace CORE.Domain.Entities
 
             }
 
+        }
+        public void Conquistar()
+        {
+            Controlada = true;
+        }
+
+        public void MarcarComoControlada()
+        {
+            Controlada = true;
         }
 
         public void Controlar()
