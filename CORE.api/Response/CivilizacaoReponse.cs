@@ -12,4 +12,5 @@ public record CivilizacaoResponse(
     int Tecnologia,
     int PoderMilitar,
     int Territorios,
-    string Era);
+    string Era,
+    string? UltimoEvento);

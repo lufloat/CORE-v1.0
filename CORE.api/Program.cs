@@ -21,6 +21,7 @@ builder.Services.AddScoped<IRegiaoRepository, RegiaoRepository>();
 
 // Use Cases
 builder.Services.AddScoped<IniciarCivilizacao>();
+builder.Services.AddScoped<ExpandirTerritorioCivilizacao>();
 builder.Services.AddScoped<AvancarTurnoCivilizacao>();
 
 var app = builder.Build();

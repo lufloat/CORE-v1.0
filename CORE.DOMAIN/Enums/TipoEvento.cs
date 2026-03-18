@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace CORE.Domain.Enums;
 
-namespace CORE.DOMAIN.Enums
+public enum TipoEvento
 {
-    internal class TipoEvento
-    {
-    }
+    Nenhum,
+    Seca,
+    ColheitaFarta,
+    Rebeliao,
+    DescobertaTecnologica
 }

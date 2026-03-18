@@ -30,6 +30,8 @@ public class Civilizacao
 
     public EraCivilizacional Era { get; private set; }
 
+    public string? UltimoEvento { get; private set; }
+
     public Civilizacao(string nome)
     {
         Id = Guid.NewGuid();
@@ -58,7 +60,36 @@ public class Civilizacao
         ConsumirComida();
         AtualizarEra();
         AjustarLimites();
+        AplicarEvento();
     }
+
+   //aqui vai uma heuristicaSimples, uma aleatoridade para escolher um evento, futuramente podemos usar IA.
+
+    public void AplicarEvento()
+    {
+        var random = new Random();
+        var valor = random.Next(1, 7);
+
+        if (valor > 20)
+        {
+            comida += 5;
+            moral += 10;
+            ultimo evento = "Seca atinigitiu a civlizacao, causando perda de comida e moral";
+        }
+        if (valor > 15)
+        {
+            comida += 10;
+            moral += 5;
+            ultimo evento = "Colheita abundante, a civilizacao ganha comida e moral";
+        }
+
+
+
+
+    }
+
+
+
 
     public void AplicarEvento(EventoCivilizacional evento)
     {
@@ -71,6 +102,11 @@ public class Civilizacao
         PoderMilitar += evento.ImpactoPoderMilitar;
 
         AjustarLimites();
+    }
+
+    public void AdicionarTerritorio()
+    {
+        Territorios++;
     }
 
     public void AdicionarTerritorio()

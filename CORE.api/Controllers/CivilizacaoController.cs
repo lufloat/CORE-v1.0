@@ -18,6 +18,7 @@ public class CivilizacaoController : ControllerBase
     {
         this.iniciarCivilizacao = iniciarCivilizacao;
         this.avancarTurnoCivilizacao = avancarTurnoCivilizacao;
+        this.expandirTerritorio = expandirTerritorio;
     }
 
     [HttpPost("iniciar")]
@@ -40,9 +41,31 @@ public class CivilizacaoController : ControllerBase
             civilizacao.Tecnologia,
             civilizacao.PoderMilitar,
             civilizacao.Territorios,
-            civilizacao.Era.ToString());
+            civilizacao.Era.ToString(),
+            civilizacao.UltimoEvento);
 
         return Ok(response);
+    }
+
+    [HttpPost("{id:guid}/expandir")]
+    public async Task<IActionResult> ExpandirAsync(Guid id)
+    {
+        var civilizacao = await expandirTerritorio.ExecutarAsync(id);
+
+        return Ok(new CivilizacaoResponse(
+            civilizacao.Id,
+            civilizacao.Nome,
+            civilizacao.Turno,
+            civilizacao.Populacao,
+            civilizacao.Comida,
+            civilizacao.Madeira,
+            civilizacao.Pedra,
+            civilizacao.Moral,
+            civilizacao.Tecnologia,
+            civilizacao.PoderMilitar,
+            civilizacao.Territorios,
+            civilizacao.Era.ToString(),
+            civilizacao.UltimoEvento));
     }
 
     [HttpPost("{id:guid}/avancar-turno")]
@@ -64,7 +87,8 @@ public class CivilizacaoController : ControllerBase
                 civilizacao.Tecnologia,
                 civilizacao.PoderMilitar,
                 civilizacao.Territorios,
-                civilizacao.Era.ToString());
+                civilizacao.Era.ToString(),
+                civilizacao.UltimoEvento);
 
             return Ok(response);
         }
