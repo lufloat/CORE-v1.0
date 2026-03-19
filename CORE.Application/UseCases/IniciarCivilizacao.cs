@@ -1,6 +1,7 @@
 ﻿using CORE.Application.Interfaces;
 using CORE.Domain.Entities;
 using CORE.Domain.Enums;
+using CORE.DOMAIN.Enums;
 
 namespace CORE.Application.UseCases;
 

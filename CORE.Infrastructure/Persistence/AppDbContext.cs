@@ -1,4 +1,5 @@
 ﻿using CORE.Domain.Entities;
+using CORE.DOMAIN.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace CORE.Infrastructure.Persistence;
@@ -26,6 +27,9 @@ public class AppDbContext : DbContext
 
             entity.Property(c => c.Era)
                 .HasConversion<string>();
+
+            entity.OwnsMany(c => c.HistoricoEventos);
+
         });
 
         modelBuilder.Entity<Regiao>(entity =>

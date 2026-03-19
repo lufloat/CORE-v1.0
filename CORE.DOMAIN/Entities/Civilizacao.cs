@@ -1,4 +1,5 @@
 ﻿using CORE.Domain.Enums;
+using CORE.DOMAIN.Entities;
 using CORE.DOMAIN.Enums;
 
 namespace CORE.Domain.Entities;
@@ -30,6 +31,8 @@ public class Civilizacao
     public EraCivilizacional Era { get; private set; }
 
     public TipoEvento UltimoEvento { get; private set; }
+
+    public List<EventoHistorico> HistoricoEventos { get; private set; } = new();
 
     public Civilizacao(string nome)
     {
@@ -116,10 +119,12 @@ public class Civilizacao
 
         // nada aconteceu
         UltimoEvento = TipoEvento.Nenhum;
+        HistoricoEventos.Add(new EventoHistorico(Turno, UltimoEvento));
     }
 
     public void AdicionarTerritorio()
     {
+
         Territorios++;
     }
 
@@ -149,7 +154,36 @@ public class Civilizacao
             Moral += 1;
         }
     }
+    public void AplicarDecisao(TipoDecisao decisao)
+    {
+        switch (decisao)
+        {
+            case TipoDecisao.InvestirTecnologia:
+                if (Madeira < 10)
+                    throw new Exception("Madeira insuficiente.");
 
+                Madeira -= 10;
+                Tecnologia += 5;
+                break;
+
+            case TipoDecisao.ProduzirComida:
+                Madeira -= 5;
+                Comida += 10;
+                break;
+
+            case TipoDecisao.TreinarExercito:
+                Comida -= 10;
+                PoderMilitar += 5;
+                break;
+
+            case TipoDecisao.MelhorarMoral:
+                Comida -= 5;
+                Moral += 10;
+                break;
+        }
+
+        AjustarLimites();
+    }
     private void AtualizarEra()
     {
         if (Populacao >= 300 && Tecnologia >= 150 && Territorios >= 8)

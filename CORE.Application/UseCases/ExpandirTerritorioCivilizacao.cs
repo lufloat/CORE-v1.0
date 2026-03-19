@@ -1,102 +1,30 @@
-﻿using CORE.Api.Requests;
-using CORE.Api.Responses;
-using CORE.Application.UseCases;
-using Microsoft.AspNetCore.Mvc;
+﻿using CORE.Application.Interfaces;
+using CORE.Domain.Entities;
 
-namespace CORE.Api.Controllers;
+namespace CORE.Application.UseCases;
 
-[ApiController]
-[Route("api/civilizacao")]
-public class CivilizacaoController : ControllerBase
+public class ExpandirTerritorioCivilizacao
 {
-    private readonly IniciarCivilizacao iniciarCivilizacao;
-    private readonly AvancarTurnoCivilizacao avancarTurnoCivilizacao;
-    private readonly ExpandirTerritorioCivilizacao expandirTerritorio;
+    private readonly ICivilizacaoRepository civilizacaoRepository;
 
-    public CivilizacaoController(
-        IniciarCivilizacao iniciarCivilizacao,
-        AvancarTurnoCivilizacao avancarTurnoCivilizacao,
-        ExpandirTerritorioCivilizacao expandirTerritorio)
+    public ExpandirTerritorioCivilizacao(ICivilizacaoRepository civilizacaoRepository)
     {
-        this.iniciarCivilizacao = iniciarCivilizacao;
-        this.avancarTurnoCivilizacao = avancarTurnoCivilizacao;
-        this.expandirTerritorio = expandirTerritorio;
+        this.civilizacaoRepository = civilizacaoRepository;
     }
 
-    [HttpPost("iniciar")]
-    public async Task<IActionResult> IniciarAsync(IniciarCivilizacaoRequest request)
+    public async Task<Civilizacao> ExecutarAsync(Guid civilizacaoId)
     {
-        if (string.IsNullOrWhiteSpace(request.Nome))
-            return BadRequest("O nome da civilização é obrigatório.");
+        var civilizacao = await civilizacaoRepository.GetByIdAsync(civilizacaoId);
 
-        var civilizacao = await iniciarCivilizacao.ExecutarAsync(request.Nome);
+        if (civilizacao is null)
+            throw new Exception("Civilização não encontrada.");
 
-        var response = new CivilizacaoResponse(
-            civilizacao.Id,
-            civilizacao.Nome,
-            civilizacao.Turno,
-            civilizacao.Populacao,
-            civilizacao.Comida,
-            civilizacao.Madeira,
-            civilizacao.Pedra,
-            civilizacao.Moral,
-            civilizacao.Tecnologia,
-            civilizacao.PoderMilitar,
-            civilizacao.Territorios,
-            civilizacao.Era.ToString(),
-            civilizacao.UltimoEvento);
+        // regra de negócio
+        civilizacao.AdicionarTerritorio();
 
-        return Ok(response);
-    }
+        // salva no banco
+        await civilizacaoRepository.UpdateAsync(civilizacao);
 
-    [HttpPost("{id:guid}/expandir")]
-    public async Task<IActionResult> ExpandirAsync(Guid id)
-    {
-        var civilizacao = await expandirTerritorio.ExecutarAsync(id);
-
-        return Ok(new CivilizacaoResponse(
-            civilizacao.Id,
-            civilizacao.Nome,
-            civilizacao.Turno,
-            civilizacao.Populacao,
-            civilizacao.Comida,
-            civilizacao.Madeira,
-            civilizacao.Pedra,
-            civilizacao.Moral,
-            civilizacao.Tecnologia,
-            civilizacao.PoderMilitar,
-            civilizacao.Territorios,
-            civilizacao.Era.ToString(),
-            civilizacao.UltimoEvento));
-    }
-
-    [HttpPost("{id:guid}/avancar-turno")]
-    public async Task<IActionResult> AvancarTurnoAsync(Guid id)
-    {
-        try
-        {
-            var civilizacao = await avancarTurnoCivilizacao.ExecutarAsync(id);
-
-            var response = new CivilizacaoResponse(
-                civilizacao.Id,
-                civilizacao.Nome,
-                civilizacao.Turno,
-                civilizacao.Populacao,
-                civilizacao.Comida,
-                civilizacao.Madeira,
-                civilizacao.Pedra,
-                civilizacao.Moral,
-                civilizacao.Tecnologia,
-                civilizacao.PoderMilitar,
-                civilizacao.Territorios,
-                civilizacao.Era.ToString(),
-                civilizacao.UltimoEvento);
-
-            return Ok(response);
-        }
-        catch (Exception ex)
-        {
-            return NotFound(ex.Message);
-        }
+        return civilizacao;
     }
 }

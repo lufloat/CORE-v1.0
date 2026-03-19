@@ -2,6 +2,6 @@
 {
     public class IniciarCivilizacaoRequest
     {
-        public string nome { get; set; } = string.Empty;
+        public string   Nome { get; set; } = string.Empty;
     }
 }
