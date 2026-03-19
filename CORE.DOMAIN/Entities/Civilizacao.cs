@@ -1,5 +1,4 @@
 ﻿using CORE.Domain.Enums;
-using CORE.DOMAIN.Entities;
 using CORE.DOMAIN.Enums;
 
 namespace CORE.Domain.Entities;
@@ -30,7 +29,7 @@ public class Civilizacao
 
     public EraCivilizacional Era { get; private set; }
 
-    public string? UltimoEvento { get; private set; }
+    public TipoEvento UltimoEvento { get; private set; }
 
     public Civilizacao(string nome)
     {
@@ -50,6 +49,7 @@ public class Civilizacao
 
         Territorios = 1;
         Era = EraCivilizacional.Tribal;
+        UltimoEvento = TipoEvento.Nenhum;
     }
 
     public void AvancarTurno(IEnumerable<Regiao> regioesControladas)
@@ -60,53 +60,62 @@ public class Civilizacao
         ConsumirComida();
         AtualizarEra();
         AjustarLimites();
-        AplicarEvento();
+
+        AplicarEvento(); // 🔥 evento com heurística
     }
 
-   //aqui vai uma heuristicaSimples, uma aleatoridade para escolher um evento, futuramente podemos usar IA.
-
+    // 🔥 Heurística simples (baseada no estado da civilização)
     public void AplicarEvento()
     {
         var random = new Random();
-        var valor = random.Next(1, 7);
+        var valor = random.Next(0, 100);
 
-        if (valor > 20)
+        // crise de comida → maior chance de seca
+        if (Comida < 15)
         {
-            comida += 5;
-            moral += 10;
-            ultimo evento = "Seca atinigitiu a civlizacao, causando perda de comida e moral";
+            if (valor < 60)
+            {
+                Comida -= 10;
+                Moral -= 5;
+                UltimoEvento = TipoEvento.Seca;
+                return;
+            }
         }
-        if (valor > 15)
+
+        // moral baixa → maior chance de rebelião
+        if (Moral < 30)
         {
-            comida += 10;
-            moral += 5;
-            ultimo evento = "Colheita abundante, a civilizacao ganha comida e moral";
+            if (valor < 50)
+            {
+                Moral -= 10;
+                PoderMilitar -= 2;
+                UltimoEvento = TipoEvento.Rebeliao;
+                return;
+            }
         }
 
+        // tecnologia alta → chance de avanço
+        if (Tecnologia > 20)
+        {
+            if (valor < 40)
+            {
+                Tecnologia += 5;
+                UltimoEvento = TipoEvento.DescobertaTecnologica;
+                return;
+            }
+        }
 
+        // evento neutro/positivo geral
+        if (valor < 25)
+        {
+            Comida += 15;
+            Moral += 3;
+            UltimoEvento = TipoEvento.ColheitaFarta;
+            return;
+        }
 
-
-    }
-
-
-
-
-    public void AplicarEvento(EventoCivilizacional evento)
-    {
-        Populacao += evento.ImpactoPopulacao;
-        Comida += evento.ImpactoComida;
-        Madeira += evento.ImpactoMadeira;
-        Pedra += evento.ImpactoPedra;
-        Moral += evento.ImpactoMoral;
-        Tecnologia += evento.ImpactoTecnologia;
-        PoderMilitar += evento.ImpactoPoderMilitar;
-
-        AjustarLimites();
-    }
-
-    public void AdicionarTerritorio()
-    {
-        Territorios++;
+        // nada aconteceu
+        UltimoEvento = TipoEvento.Nenhum;
     }
 
     public void AdicionarTerritorio()

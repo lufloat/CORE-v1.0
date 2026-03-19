@@ -1,4 +1,5 @@
-﻿using CORE.Api.Requests;
+﻿using CORE.Api.Helpers;
+using CORE.Api.Requests;
 using CORE.Api.Responses;
 using CORE.Application.UseCases;
 using Microsoft.AspNetCore.Mvc;
@@ -42,7 +43,7 @@ public class CivilizacaoController : ControllerBase
             civilizacao.PoderMilitar,
             civilizacao.Territorios,
             civilizacao.Era.ToString(),
-            civilizacao.UltimoEvento);
+            EventoHelper.Traduzir(civilizacao.UltimoEvento));
 
         return Ok(response);
     }
@@ -65,7 +66,7 @@ public class CivilizacaoController : ControllerBase
             civilizacao.PoderMilitar,
             civilizacao.Territorios,
             civilizacao.Era.ToString(),
-            civilizacao.UltimoEvento));
+            EventoHelper.Traduzir(civilizacao.UltimoEvento)));
     }
 
     [HttpPost("{id:guid}/avancar-turno")]
@@ -88,7 +89,7 @@ public class CivilizacaoController : ControllerBase
                 civilizacao.PoderMilitar,
                 civilizacao.Territorios,
                 civilizacao.Era.ToString(),
-                civilizacao.UltimoEvento);
+                EventoHelper.Traduzir(civilizacao.UltimoEvento));
 
             return Ok(response);
         }
