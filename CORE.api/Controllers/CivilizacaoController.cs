@@ -3,6 +3,7 @@ using CORE.Api.Requests;
 using CORE.Api.Responses;
 using CORE.Application.Interfaces;
 using CORE.Application.UseCases;
+using CORE.Domain.Entities;
 using CORE.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,6 +18,7 @@ public class CivilizacaoController : ControllerBase
     private readonly ExpandirTerritorioCivilizacao expandirTerritorio;
     private readonly ICivilizacaoRepository civilizacaoRepository; // ✅ declarado
     private readonly AplicarDecisaoCivilizacao aplicarDecisao;
+    private readonly SimularCivilizacao simularCivilizacao;
 
 
     public CivilizacaoController(
@@ -24,13 +26,15 @@ public class CivilizacaoController : ControllerBase
         AvancarTurnoCivilizacao avancarTurnoCivilizacao,
         ExpandirTerritorioCivilizacao expandirTerritorio,
         ICivilizacaoRepository civilizacaoRepository,
-         AplicarDecisaoCivilizacao aplicarDecisao) // ✅ injetado
+         AplicarDecisaoCivilizacao aplicarDecisao,
+         SimularCivilizacao simularCivilizacao) // ✅ injetado
     {
         this.iniciarCivilizacao = iniciarCivilizacao;
         this.avancarTurnoCivilizacao = avancarTurnoCivilizacao;
         this.expandirTerritorio = expandirTerritorio;
         this.civilizacaoRepository = civilizacaoRepository;
-        this.aplicarDecisao = aplicarDecisao;// ✅ atribuído
+        this.aplicarDecisao = aplicarDecisao;
+        this.simularCivilizacao = simularCivilizacao;// ✅ atribuído
     }
 
     [HttpPost("iniciar")]
@@ -109,6 +113,37 @@ public class CivilizacaoController : ControllerBase
             EventoHelper.Traduzir(civilizacao.UltimoEvento)
         ));
     }
+
+
+    [HttpPost("{id:guid}/simular")]
+    public async Task<IActionResult> SimularAsync(Guid id, [FromQuery] int turnos = 10)
+    {
+        var (civilizacao, historico) = await simularCivilizacao.ExecutarAsync(id, turnos);
+
+        var histResponse = historico.Select(h => new SimulacaoTurnoResponse(
+            h.Turno, h.Populacao, h.Comida, h.Madeira, h.Pedra,
+            h.Moral, h.Tecnologia, h.PoderMilitar, h.Territorios,
+            h.Era, h.Decisao, EventoHelper.Traduzir(Enum.Parse<TipoEvento>(h.Evento))
+        )).ToList();
+
+        var estadoFinal = new CivilizacaoResponse(
+            civilizacao.Id, civilizacao.Nome, civilizacao.Turno,
+            civilizacao.Populacao, civilizacao.Comida, civilizacao.Madeira,
+            civilizacao.Pedra, civilizacao.Moral, civilizacao.Tecnologia,
+            civilizacao.PoderMilitar, civilizacao.Territorios,
+            civilizacao.Era.ToString(),
+            EventoHelper.Traduzir(civilizacao.UltimoEvento));
+
+        return Ok(new SimulacaoResponse(turnos, histResponse, estadoFinal));
+    }
+ 
+
+
+
+
+
+
+
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetByIdAsync(Guid id)

@@ -1,6 +1,5 @@
 ﻿using CORE.Application.Interfaces;
 using CORE.Domain.Entities;
-using CORE.Infrastructure.Services;
 
 namespace CORE.Application.UseCases;
 
@@ -8,12 +7,12 @@ public class AvancarTurnoCivilizacao
 {
     private readonly ICivilizacaoRepository civilizacaoRepository;
     private readonly IRegiaoRepository regiaoRepository;
-    private readonly IAService iaservice;
+    private readonly IIAService iaservice;
 
     public AvancarTurnoCivilizacao(
         ICivilizacaoRepository civilizacaoRepository,
         IRegiaoRepository regiaoRepository,
-        IAService iaservice)  // ← ADICIONA AQUI
+        IIAService iaservice)  // ← ADICIONA AQUI
     {
         this.civilizacaoRepository = civilizacaoRepository;
         this.regiaoRepository = regiaoRepository;
@@ -27,6 +26,11 @@ public class AvancarTurnoCivilizacao
             throw new Exception("Civilização não encontrada.");
 
         var regioesControladas = await regiaoRepository.GetControladasAsync(civilizacaoId);
+
+        var decisao = await iaservice.ObterDecisaoAsync(civilizacao);
+
+        civilizacao.AplicarDecisao(decisao);
+
         civilizacao.AvancarTurno(regioesControladas);
         await civilizacaoRepository.UpdateAsync(civilizacao);
         return civilizacao;

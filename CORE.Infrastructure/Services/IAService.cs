@@ -1,11 +1,13 @@
-﻿using System.Net.Http.Json;
+﻿using CORE.Application.Interfaces;
 using CORE.Domain.Entities;
 using CORE.Domain.Enums;
+using System.Net.Http.Json;
 
 
 namespace CORE.Infrastructure.Services;
 
-public class IAService
+public class IAService : IIAService  // ← adiciona isso
+
 {
     private readonly HttpClient httpClient;
 

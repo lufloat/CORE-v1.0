@@ -10,6 +10,8 @@ public class AppDbContext : DbContext
     public DbSet<Regiao> Regioes { get; set; }
     public DbSet<EventoCivilizacional> EventosCivilizacionais { get; set; }
 
+    public DbSet<Partida> Partidas { get; set; }
+
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
     {

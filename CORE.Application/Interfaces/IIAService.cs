@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using CORE.Domain.Entities;
+using CORE.Domain.Enums;
 
-namespace CORE.Application.Interfaces
+namespace CORE.Application.Interfaces;
+
+public interface IIAService
 {
-    internal class IIAService
-    {
-    }
+    Task<TipoDecisao> ObterDecisaoAsync(Civilizacao civilizacao);
 }

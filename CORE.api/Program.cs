@@ -2,6 +2,7 @@ using CORE.Application.Interfaces;
 using CORE.Application.UseCases;
 using CORE.Infrastructure.Persistence;
 using CORE.Infrastructure.Repositories;
+using CORE.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -14,7 +15,8 @@ builder.Services.AddSwaggerGen();
 
 // Services to python IA
 
-builder.Services.AddHttpClient<IAService>(client =>
+// DEPOIS ✅
+builder.Services.AddHttpClient<IIAService, IAService>(client =>
 {
     client.BaseAddress = new Uri("http://localhost:8000/");
 });
@@ -26,12 +28,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Repositories
 builder.Services.AddScoped<ICivilizacaoRepository, CivilizacaoRepository>();
 builder.Services.AddScoped<IRegiaoRepository, RegiaoRepository>();
+builder.Services.AddScoped<IPartidaRepository, PartidaRepository>(); 
 
 // Use Cases
 builder.Services.AddScoped<IniciarCivilizacao>();
 builder.Services.AddScoped<ExpandirTerritorioCivilizacao>();
 builder.Services.AddScoped<AvancarTurnoCivilizacao>();
 builder.Services.AddScoped<AplicarDecisaoCivilizacao>();
+builder.Services.AddScoped<SimularCivilizacao>();
+builder.Services.AddScoped<CriarPartida>();
+builder.Services.AddScoped<AvancarTurnoPartida>();
 
 
 var app = builder.Build();
