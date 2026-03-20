@@ -12,6 +12,13 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Services to python IA
+
+builder.Services.AddHttpClient<IAService>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:8000/");
+});
+
 // DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("CoreDb")));
@@ -24,6 +31,8 @@ builder.Services.AddScoped<IRegiaoRepository, RegiaoRepository>();
 builder.Services.AddScoped<IniciarCivilizacao>();
 builder.Services.AddScoped<ExpandirTerritorioCivilizacao>();
 builder.Services.AddScoped<AvancarTurnoCivilizacao>();
+builder.Services.AddScoped<AplicarDecisaoCivilizacao>();
+
 
 var app = builder.Build();
 
