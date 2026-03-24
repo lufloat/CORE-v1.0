@@ -213,6 +213,29 @@ public class Civilizacao
         Era = EraCivilizacional.Tribal;
     }
 
+    public void AplicarVitoria(int recursosRoubados, int territoriosRoubados)
+    {
+        Comida += recursosRoubados;
+        Territorios += territoriosRoubados;
+        Moral += 15;
+        PoderMilitar += 3;
+
+        AjustarLimites();
+    }
+
+    public void AplicarDerrota(int recursosRoubados, int territoriosRoubados)
+    {
+        Comida -= recursosRoubados;
+        Territorios -= territoriosRoubados;
+        Moral -= 20;
+        PoderMilitar -= 5;
+
+        AjustarLimites();
+    }
+
+
+
+
     private void AjustarLimites()
     {
         if (Populacao < 0) Populacao = 0;

@@ -38,6 +38,8 @@ builder.Services.AddScoped<AplicarDecisaoCivilizacao>();
 builder.Services.AddScoped<SimularCivilizacao>();
 builder.Services.AddScoped<CriarPartida>();
 builder.Services.AddScoped<AvancarTurnoPartida>();
+builder.Services.AddScoped<CombaterCivilizacoes>();
+
 
 
 var app = builder.Build();

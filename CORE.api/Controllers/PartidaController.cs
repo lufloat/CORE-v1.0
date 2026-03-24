@@ -13,15 +13,18 @@ public class PartidaController : ControllerBase
     private readonly CriarPartida criarPartida;
     private readonly AvancarTurnoPartida avancarTurnoPartida;
     private readonly ILogger<PartidaController> logger;
+    private readonly CombaterCivilizacoes combaterCivilizacoes;
 
     public PartidaController(
         CriarPartida criarPartida,
         AvancarTurnoPartida avancarTurnoPartida,
-        ILogger<PartidaController> logger)
+        ILogger<PartidaController> logger,
+        CombaterCivilizacoes combaterCivilizacoes)
     {
         this.criarPartida = criarPartida;
         this.avancarTurnoPartida = avancarTurnoPartida;
         this.logger = logger;
+        this.combaterCivilizacoes = combaterCivilizacoes;
     }
 
     [HttpPost("criar")]
@@ -36,7 +39,6 @@ public class PartidaController : ControllerBase
         }
 
         var partida = await criarPartida.ExecutarAsync(nomes);
-
         logger.LogInformation("Partida {PartidaId} criada com sucesso.", partida.Id);
         return Ok(MapearResponse(partida));
     }
@@ -45,7 +47,6 @@ public class PartidaController : ControllerBase
     public async Task<IActionResult> AvancarTurnoAsync(Guid id)
     {
         logger.LogInformation("Requisição recebida: avançar turno da partida {PartidaId}.", id);
-
         try
         {
             var partida = await avancarTurnoPartida.ExecutarAsync(id);
@@ -60,16 +61,37 @@ public class PartidaController : ControllerBase
         }
     }
 
+    [HttpPost("{id:guid}/combate")]
+    public async Task<IActionResult> CombateAsync(
+        Guid id,
+        [FromQuery] Guid atacanteId,
+        [FromQuery] Guid defensorId)
+    {
+        logger.LogInformation("Requisição recebida: combate na partida {PartidaId}.", id);
+        try
+        {
+            var resultado = await combaterCivilizacoes.ExecutarAsync(id, atacanteId, defensorId);
+            return Ok(new CombateResponse(
+                resultado.Descricao,
+                resultado.Vencedor.Nome,
+                resultado.Perdedor.Nome,
+                resultado.DiferencaPoderMilitar,
+                resultado.RecursosRoubados,
+                resultado.TerritoriosRoubados,
+                MapearCivilizacao(resultado.Atacante),
+                MapearCivilizacao(resultado.Defensor)
+            ));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro no combate da partida {PartidaId}.", id);
+            return BadRequest(ex.Message);
+        }
+    }
+
     private PartidaResponse MapearResponse(CORE.Domain.Entities.Partida partida)
     {
-        var civs = partida.Civilizacoes.Select(c => new CivilizacaoResponse(
-            c.Id, c.Nome, c.Turno,
-            c.Populacao, c.Comida, c.Madeira,
-            c.Pedra, c.Moral, c.Tecnologia,
-            c.PoderMilitar, c.Territorios,
-            c.Era.ToString(),
-            EventoHelper.Traduzir(c.UltimoEvento)
-        )).ToList();
+        var civs = partida.Civilizacoes.Select(c => MapearCivilizacao(c)).ToList();
 
         return new PartidaResponse(
             partida.Id,
@@ -77,6 +99,25 @@ public class PartidaController : ControllerBase
             partida.TurnoAtual,
             partida.Encerrada,
             civs
+        );
+    }
+
+    private CivilizacaoResponse MapearCivilizacao(CORE.Domain.Entities.Civilizacao civilizacao)
+    {
+        return new CivilizacaoResponse(
+            civilizacao.Id,
+            civilizacao.Nome,
+            civilizacao.Turno,
+            civilizacao.Populacao,
+            civilizacao.Comida,
+            civilizacao.Madeira,
+            civilizacao.Pedra,
+            civilizacao.Moral,
+            civilizacao.Tecnologia,
+            civilizacao.PoderMilitar,
+            civilizacao.Territorios,
+            civilizacao.Era.ToString(),
+            EventoHelper.Traduzir(civilizacao.UltimoEvento)
         );
     }
 }
