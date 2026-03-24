@@ -1,0 +1,99 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using CORE.Blazor.Services
+@using CORE.Blazor.Models
+@inject ApiService ApiService
+@inject NavigationManager Nav
+
+<div class="container mt-5">
+    <h1 class="text-center mb-4">⚔️ CORE — Simulador de Civilizações</h1>
+
+    <div class="card mx-auto" style="max-width: 500px;">
+        <div class="card-body">
+            <h4 class="card-title">Nova Partida</h4>
+            <p class="text-muted">Informe os nomes das civilizações (mínimo 2)</p>
+
+            @for (int i = 0; i < nomes.Count; i++)
+            {
+                var index = i;
+                <div class="input-group mb-2">
+                    <span class="input-group-text">@(index + 1)</span>
+                    <input class="form-control"
+                           placeholder="Nome da civilização"
+                           @bind="nomes[index]" />
+                    @if (nomes.Count > 2)
+                    {
+                        <button class="btn btn-outline-danger"
+                                @onclick="() => RemoverCivilizacao(index)">
+                            ✕
+                        </button>
+                    }
+                </div>
+            }
+
+            <button class="btn btn-outline-secondary w-100 mb-3"
+                    @onclick="AdicionarCivilizacao">
+                + Adicionar Civilização
+            </button>
+
+            @if (!string.IsNullOrEmpty(erro))
+            {
+                <div class="alert alert-danger">@erro</div>
+            }
+
+            <button class="btn btn-primary w-100"
+                    @onclick="CriarPartida"
+                    disabled="@carregando">
+                @if (carregando)
+                {
+                    <span>Criando...</span>
+                }
+                else
+                {
+                    <span>⚔️ Iniciar Partida</span>
+                }
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<string> nomes = new() { "", "" };
+    private bool carregando = false;
+    private string erro = string.Empty;
+
+    private void AdicionarCivilizacao()
+    {
+        if (nomes.Count < 6)
+            nomes.Add("");
+    }
+
+    private void RemoverCivilizacao(int index)
+    {
+        nomes.RemoveAt(index);
+    }
+
+    private async Task CriarPartida()
+    {
+        erro = string.Empty;
+
+        var nomesValidos = nomes.Where(n => !string.IsNullOrWhiteSpace(n)).ToList();
+
+        if (nomesValidos.Count < 2)
+        {
+            erro = "Informe pelo menos 2 nomes de civilizações.";
+            return;
+        }
+
+        carregando = true;
+
+        var partida = await ApiService.CriarPartidaAsync(nomesValidos);
+
+        carregando = false;
+
+        if (partida is not null)
+            Nav.NavigateTo($"/partida/{partida.Id}");
+        else
+            erro = "Erro ao criar partida. Verifique se a API está rodando.";
+    }
+}

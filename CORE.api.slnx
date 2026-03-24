@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="CORE.Api/CORE.Api.csproj" />
   <Project Path="CORE.Application/CORE.Application.csproj" />
+  <Project Path="CORE.Blazor/CORE.Blazor.csproj" Id="982d7669-580d-4651-8ab6-e22b8693cf6f" />
   <Project Path="CORE.DOMAIN/CORE.DOMAIN.csproj" />
   <Project Path="CORE.Infrastructure/CORE.Infrastructure.csproj" />
   <Project Path="CORE.Tests/CORE.Tests.csproj" Id="077f0fec-111c-4de0-a77a-3ab353669568" />

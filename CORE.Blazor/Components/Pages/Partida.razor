@@ -1,0 +1,182 @@
+﻿@page "/partida/{PartidaId:guid}"
+@rendermode InteractiveServer
+@using CORE.Blazor.Services
+@using CORE.Blazor.Models
+@inject ApiService ApiService
+
+<div class="container mt-4">
+    @if (partida is null)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status"></div>
+            <p>Carregando partida...</p>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>⚔️ @partida.Nome</h2>
+            <span class="badge bg-primary fs-6">Turno @partida.TurnoAtual</span>
+        </div>
+
+        <!-- Painel das Civilizações -->
+        <div class="row mb-4">
+            @foreach (var civ in partida.Civilizacoes)
+            {
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 @(combate?.Vencedor == civ.Nome ? "border-success" : combate?.Perdedor == civ.Nome ? "border-danger" : "")">
+                        <div class="card-header d-flex justify-content-between">
+                            <strong>@civ.Nome</strong>
+                            <span class="badge bg-secondary">@civ.Era</span>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr><td>👥 População</td><td><strong>@civ.Populacao</strong></td></tr>
+                                    <tr><td>🌾 Comida</td><td><strong class="@(civ.Comida < 15 ? "text-danger" : "")">@civ.Comida</strong></td></tr>
+                                    <tr><td>🪵 Madeira</td><td><strong>@civ.Madeira</strong></td></tr>
+                                    <tr><td>🪨 Pedra</td><td><strong>@civ.Pedra</strong></td></tr>
+                                    <tr><td>😊 Moral</td><td><strong class="@(civ.Moral < 20 ? "text-danger" : "")">@civ.Moral</strong></td></tr>
+                                    <tr><td>🔬 Tecnologia</td><td><strong>@civ.Tecnologia</strong></td></tr>
+                                    <tr><td>⚔️ Poder Militar</td><td><strong>@civ.PoderMilitar</strong></td></tr>
+                                    <tr><td>🗺️ Territórios</td><td><strong>@civ.Territorios</strong></td></tr>
+                                </tbody>
+                            </table>
+
+                            @if (!string.IsNullOrEmpty(civ.UltimoEvento))
+                            {
+                                <div class="alert alert-info py-1 px-2 mb-2">
+                                    📜 @civ.UltimoEvento
+                                </div>
+                            }
+
+                            <!-- Botões de Combate -->
+                            @if (atacanteSelecionado is null)
+                            {
+                                <button class="btn btn-outline-warning btn-sm w-100"
+                                        @onclick="() => SelecionarAtacante(civ)">
+                                    ⚔️ Atacar com esta
+                                </button>
+                            }
+                            else if (atacanteSelecionado.Id != civ.Id)
+                            {
+                                <button class="btn btn-danger btn-sm w-100"
+                                        @onclick="() => ExecutarCombate(civ)"
+                                        disabled="@carregando">
+                                    🎯 Atacar @civ.Nome
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-secondary btn-sm w-100"
+                                        @onclick="CancelarAtaque">
+                                    ✕ Cancelar ataque
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Resultado do Combate -->
+        @if (combate is not null)
+        {
+            <div class="alert @(combate.Vencedor == atacanteSelecionado?.Nome ? "alert-success" : "alert-warning") mb-4">
+                <h5>⚔️ Resultado do Combate</h5>
+                <p>@combate.Descricao</p>
+                <small>
+                    Recursos roubados: <strong>@combate.RecursosRoubados</strong> |
+                    Territórios roubados: <strong>@combate.TerritoriosRoubados</strong>
+                </small>
+            </div>
+        }
+
+        <!-- Mensagem de erro -->
+        @if (!string.IsNullOrEmpty(erro))
+        {
+            <div class="alert alert-danger">@erro</div>
+        }
+
+        <!-- Botão Avançar Turno -->
+        <div class="text-center">
+            <button class="btn btn-primary btn-lg"
+                    @onclick="AvancarTurno"
+                    disabled="@carregando">
+                @if (carregando)
+                {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    <span>Processando...</span>
+                }
+                else
+                {
+                    <span>▶️ Avançar Turno</span>
+                }
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid PartidaId { get; set; }
+
+    private PartidaModel? partida;
+    private CombateModel? combate;
+    private CivilizacaoModel? atacanteSelecionado;
+    private bool carregando = false;
+    private string erro = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarPartida();
+    }
+
+    private async Task CarregarPartida()
+    {
+        partida = await ApiService.GetPartidaAsync(PartidaId);
+    }
+
+    private async Task AvancarTurno()
+    {
+        erro = string.Empty;
+        combate = null;
+        carregando = true;
+
+        partida = await ApiService.AvancarTurnoAsync(PartidaId);
+
+        if (partida is null)
+            erro = "Erro ao avançar turno. Verifique se a API está rodando.";
+
+        carregando = false;
+    }
+
+    private void SelecionarAtacante(CivilizacaoModel civ)
+    {
+        atacanteSelecionado = civ;
+        combate = null;
+        erro = string.Empty;
+    }
+
+    private void CancelarAtaque()
+    {
+        atacanteSelecionado = null;
+        combate = null;
+    }
+
+    private async Task ExecutarCombate(CivilizacaoModel defensor)
+    {
+        if (atacanteSelecionado is null) return;
+
+        erro = string.Empty;
+        carregando = true;
+
+        combate = await ApiService.CombaterAsync(PartidaId, atacanteSelecionado.Id, defensor.Id);
+
+        if (combate is null)
+            erro = "Erro ao executar combate.";
+
+        partida = await ApiService.AvancarTurnoAsync(PartidaId);
+        atacanteSelecionado = null;
+        carregando = false;
+    }
+}

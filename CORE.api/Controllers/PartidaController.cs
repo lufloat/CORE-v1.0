@@ -1,5 +1,6 @@
 ﻿using CORE.Api.Helpers;
 using CORE.Api.Responses;
+using CORE.Application.Interfaces;
 using CORE.Application.UseCases;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -14,17 +15,19 @@ public class PartidaController : ControllerBase
     private readonly AvancarTurnoPartida avancarTurnoPartida;
     private readonly ILogger<PartidaController> logger;
     private readonly CombaterCivilizacoes combaterCivilizacoes;
+    private readonly IPartidaRepository partidaRepository;
 
     public PartidaController(
         CriarPartida criarPartida,
         AvancarTurnoPartida avancarTurnoPartida,
         ILogger<PartidaController> logger,
-        CombaterCivilizacoes combaterCivilizacoes)
+        CombaterCivilizacoes combaterCivilizacoes, IPartidaRepository partidaRepository)
     {
         this.criarPartida = criarPartida;
         this.avancarTurnoPartida = avancarTurnoPartida;
         this.logger = logger;
         this.combaterCivilizacoes = combaterCivilizacoes;
+        this.partidaRepository = partidaRepository;
     }
 
     [HttpPost("criar")]
@@ -60,6 +63,20 @@ public class PartidaController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetByIdAsync(Guid id)
+    {
+        var partida = await partidaRepository.GetByIdComCivilizacoesAsync(id);
+
+        if (partida is null)
+            return NotFound("Partida não encontrada.");
+
+        return Ok(MapearResponse(partida));
+    }
+
+
 
     [HttpPost("{id:guid}/combate")]
     public async Task<IActionResult> CombateAsync(
