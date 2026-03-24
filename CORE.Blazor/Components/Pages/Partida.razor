@@ -3,6 +3,7 @@
 @using CORE.Blazor.Services
 @using CORE.Blazor.Models
 @inject ApiService ApiService
+@using CORE.Blazor.Components
 
 <div class="container mt-4">
     @if (partida is null)
@@ -16,6 +17,7 @@
     {
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>⚔️ @partida.Nome</h2>
+            <MapaGrid Regioes="regioes" TamanhoX="5" TamanhoY="5" />
             <span class="badge bg-primary fs-6">Turno @partida.TurnoAtual</span>
         </div>
 
@@ -125,10 +127,12 @@
     private CivilizacaoModel? atacanteSelecionado;
     private bool carregando = false;
     private string erro = string.Empty;
+    private List<RegiaoModel> regioes = new();
 
     protected override async Task OnInitializedAsync()
     {
-        await CarregarPartida();
+        partida = await ApiService.GetPartidaAsync(PartidaId);
+        regioes = await ApiService.GetRegioesByPartidaAsync(PartidaId);
     }
 
     private async Task CarregarPartida()
@@ -143,6 +147,7 @@
         carregando = true;
 
         partida = await ApiService.AvancarTurnoAsync(PartidaId);
+        regioes = await ApiService.GetRegioesByPartidaAsync(PartidaId);
 
         if (partida is null)
             erro = "Erro ao avançar turno. Verifique se a API está rodando.";

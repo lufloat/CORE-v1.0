@@ -1,0 +1,140 @@
+﻿@using CORE.Blazor.Models
+
+<div class="mapa-container mb-4">
+    <h5 class="mb-3">🗺️ Mapa</h5>
+    <div class="mapa-grid">
+        @for (int y = 0; y < TamanhoY; y++)
+        {
+            <div class="mapa-linha">
+                @for (int x = 0; x < TamanhoX; x++)
+                {
+                    var regiao = ObterRegiao(x, y);
+                    <div class="mapa-celula @ObterClasseTerreno(regiao)"
+                         title="@ObterTooltip(regiao, x, y)">
+                        <span class="icone-terreno">@ObterIcone(regiao)</span>
+                        @if (regiao is not null)
+                        {
+                            <span class="nome-civ">@regiao.CivilizacaoNome[..Math.Min(3, regiao.CivilizacaoNome.Length)]</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .mapa-container {
+        overflow-x: auto;
+    }
+
+    .mapa-grid {
+        display: inline-block;
+        border: 2px solid #333;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .mapa-linha {
+        display: flex;
+    }
+
+    .mapa-celula {
+        width: 70px;
+        height: 70px;
+        border: 1px solid rgba(0,0,0,0.15);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: default;
+        transition: transform 0.1s;
+        position: relative;
+    }
+
+        .mapa-celula:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+    .icone-terreno {
+        font-size: 1.6rem;
+    }
+
+    .nome-civ {
+        font-size: 0.55rem;
+        font-weight: bold;
+        background: rgba(0,0,0,0.5);
+        color: white;
+        padding: 1px 3px;
+        border-radius: 3px;
+        margin-top: 2px;
+    }
+
+    .terreno-vazio {
+        background-color: #e8e8e8;
+    }
+
+    .terreno-planicie {
+        background-color: #c8e6c9;
+    }
+
+    .terreno-floresta {
+        background-color: #388e3c;
+    }
+
+    .terreno-montanha {
+        background-color: #90a4ae;
+    }
+
+    .terreno-rio {
+        background-color: #81d4fa;
+    }
+
+    .terreno-deserto {
+        background-color: #fff176;
+    }
+</style>
+
+@code {
+    [Parameter] public List<RegiaoModel> Regioes { get; set; } = new();
+    [Parameter] public int TamanhoX { get; set; } = 5;
+    [Parameter] public int TamanhoY { get; set; } = 5;
+
+    private RegiaoModel? ObterRegiao(int x, int y)
+        => Regioes.FirstOrDefault(r => r.X == x && r.Y == y);
+
+    private string ObterClasseTerreno(RegiaoModel? regiao)
+    {
+        if (regiao is null) return "terreno-vazio";
+        return regiao.Terreno switch
+        {
+            "Planicie" => "terreno-planicie",
+            "Floresta" => "terreno-floresta",
+            "Montanha" => "terreno-montanha",
+            "Rio" => "terreno-rio",
+            "Deserto" => "terreno-deserto",
+            _ => "terreno-vazio"
+        };
+    }
+
+    private string ObterIcone(RegiaoModel? regiao)
+    {
+        if (regiao is null) return "⬜";
+        return regiao.Terreno switch
+        {
+            "Planicie" => "🌾",
+            "Floresta" => "🌲",
+            "Montanha" => "⛰️",
+            "Rio" => "🏞️",
+            "Deserto" => "🏜️",
+            _ => "⬜"
+        };
+    }
+
+    private string ObterTooltip(RegiaoModel? regiao, int x, int y)
+    {
+        if (regiao is null) return $"({x},{y}) — Território desocupado";
+        return $"({x},{y}) {regiao.Nome} — {regiao.Terreno} — {regiao.CivilizacaoNome}";
+    }
+}

@@ -7,4 +7,6 @@ public interface ICivilizacaoRepository
     Task AddAsync(Civilizacao civilizacao);
     Task<Civilizacao?> GetByIdAsync(Guid id);
     Task UpdateAsync(Civilizacao civilizacao);
+
+    Task<IEnumerable<Civilizacao>> GetByPartidaIdAsync(Guid partidaId);
 }

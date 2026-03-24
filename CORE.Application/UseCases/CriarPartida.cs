@@ -36,17 +36,28 @@ public class CriarPartida
         var partida = new Partida($"Partida {DateTime.UtcNow:dd/MM/yyyy HH:mm}");
         logger.LogInformation("Criando partida: {Nome}", partida.Nome);
 
+        var posicoes = new List<(int x, int y)>
+        {
+            (0, 0), (4, 0), (0, 4), (4, 4), (2, 2), (4, 2)
+        };
+
+        int indice = 0;
         foreach (var nome in nomesCivilizacoes)
         {
             var civilizacao = new Civilizacao(nome);
-            var regiaoInicial = new Regiao("Vale Inicial", TipoTerreno.Planicie, civilizacao.Id);
+
+            var (x, y) = posicoes[indice % posicoes.Count];
+            var regiaoInicial = new Regiao("Vale Inicial", TipoTerreno.Planicie, civilizacao.Id, x, y);
             regiaoInicial.MarcarComoControlada();
 
             await civilizacaoRepository.AddAsync(civilizacao);
             await regiaoRepository.AddAsync(regiaoInicial);
 
             partida.AdicionarCivilizacao(civilizacao);
-            logger.LogInformation("Civilização criada: {Nome}", civilizacao.Nome);
+            logger.LogInformation("Civilização criada: {Nome} na posição ({X}, {Y})",
+                civilizacao.Nome, x, y);
+
+            indice++;
         }
 
         await partidaRepository.AddAsync(partida);

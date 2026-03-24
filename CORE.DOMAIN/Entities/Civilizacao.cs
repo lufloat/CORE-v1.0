@@ -8,6 +8,8 @@ public class Civilizacao
 {
     public Guid Id { get; private set; }
 
+    public Guid? PartidaId { get; private set; }
+
     public string Nome { get; private set; }
 
     public int Turno { get; private set; }

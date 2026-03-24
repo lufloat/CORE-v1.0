@@ -25,6 +25,13 @@ public class CivilizacaoRepository : ICivilizacaoRepository
         return await context.Civilizacoes.FirstOrDefaultAsync(c => c.Id == id);
     }
 
+    public async Task<IEnumerable<Civilizacao>> GetByPartidaIdAsync(Guid partidaId)
+    {
+        return await context.Civilizacoes
+            .Where(c => c.PartidaId == partidaId)
+            .ToListAsync();
+    }
+
     public async Task UpdateAsync(Civilizacao civilizacao)
     {
         context.Civilizacoes.Update(civilizacao);

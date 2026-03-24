@@ -44,6 +44,17 @@ public class ApiService
         catch { return null; }
     }
 
+    public async Task<List<RegiaoModel>> GetRegioesByPartidaAsync(Guid partidaId)
+    {
+        try
+        {
+            var result = await httpClient.GetFromJsonAsync<List<RegiaoModel>>(
+                $"api/regiao/partida/{partidaId}");
+            return result ?? new List<RegiaoModel>();
+        }
+        catch { return new List<RegiaoModel>(); }
+    }
+
     public async Task<CombateModel?> CombaterAsync(Guid partidaId, Guid atacanteId, Guid defensorId)
     {
         try

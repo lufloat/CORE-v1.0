@@ -14,8 +14,10 @@ namespace CORE.Domain.Entities
         public int ProducaoPedra { get; private set; }
         public int NivelDesenvolvimento { get; private set; }
         public Guid CivilizacaoId { get; private set; }
+        public int X { get; private set; }
+        public int Y { get; private set; }
 
-        public Regiao(string nome, TipoTerreno terreno, Guid civilizacaoId)
+        public Regiao(string nome, TipoTerreno terreno, Guid civilizacaoId, int x=0, int y=0)
         {
             Id = Guid.NewGuid();
             Nome = nome;
@@ -23,6 +25,8 @@ namespace CORE.Domain.Entities
             Controlada = false;
             NivelDesenvolvimento = 0;
             CivilizacaoId = civilizacaoId; // ✅ agora o parâmetro existe
+            X = x;
+            Y = y;
             DefinirProducaoBase();
         }
 
