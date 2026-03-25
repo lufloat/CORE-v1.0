@@ -24,6 +24,7 @@ builder.Services.AddCors(options =>
 
 
 builder.Services.AddScoped<ApiService>();
+builder.Services.AddScoped<AudioService>();
 
 var app = builder.Build();
 

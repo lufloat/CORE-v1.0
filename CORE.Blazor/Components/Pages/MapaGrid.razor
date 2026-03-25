@@ -1,99 +1,274 @@
 ﻿@using CORE.Blazor.Models
 
-<div class="mapa-container mb-4">
-    <h5 class="mb-3">🗺️ Mapa</h5>
-    <div class="mapa-grid">
-        @for (int y = 0; y < TamanhoY; y++)
-        {
-            <div class="mapa-linha">
-                @for (int x = 0; x < TamanhoX; x++)
-                {
-                    var regiao = ObterRegiao(x, y);
-                    <div class="mapa-celula @ObterClasseTerreno(regiao)"
-                         title="@ObterTooltip(regiao, x, y)">
-                        <span class="icone-terreno">@ObterIcone(regiao)</span>
-                        @if (regiao is not null)
-                        {
-                            <span class="nome-civ">@regiao.CivilizacaoNome[..Math.Min(3, regiao.CivilizacaoNome.Length)]</span>
-                        }
-                    </div>
-                }
-            </div>
-        }
+<div class="mapa-wrapper">
+    <div class="mapa-header">
+        <span class="mapa-corner tl"></span>
+        <span class="mapa-corner tr"></span>
+        <span class="mapa-corner bl"></span>
+        <span class="mapa-corner br"></span>
+        <span class="mapa-title">✦ Mapa do Mundo ✦</span>
+    </div>
+    <div class="mapa-body">
+        <div class="mapa-grid">
+            @for (int y = 0; y < TamanhoY; y++)
+            {
+                var offsetY = y;
+                <div class="mapa-row @(offsetY % 2 == 1 ? "row-offset" : "")">
+                    @for (int x = 0; x < TamanhoX; x++)
+                    {
+                        var regiao = ObterRegiao(x, offsetY);
+                        var classe = ObterClasseTerreno(regiao);
+                        var icone = ObterIcone(regiao);
+                        var tooltip = ObterTooltip(regiao, x, offsetY);
+                        <div class="hex-wrap" title="@tooltip">
+                            <div class="hex @classe">
+                                <div class="hex-inner">
+                                    <span class="hex-icone">@icone</span>
+                                    @if (regiao is not null && !string.IsNullOrEmpty(regiao.CivilizacaoNome))
+                                    {
+                                        <span class="hex-civ">@regiao.CivilizacaoNome[..Math.Min(4, regiao.CivilizacaoNome.Length)]</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Legenda -->
+        <div class="mapa-legenda">
+            <span class="leg-item"><span class="leg-dot planicie"></span>Planície</span>
+            <span class="leg-item"><span class="leg-dot floresta"></span>Floresta</span>
+            <span class="leg-item"><span class="leg-dot montanha"></span>Montanha</span>
+            <span class="leg-item"><span class="leg-dot rio"></span>Rio</span>
+            <span class="leg-item"><span class="leg-dot deserto"></span>Deserto</span>
+        </div>
     </div>
 </div>
 
 <style>
-    .mapa-container {
-        overflow-x: auto;
-    }
-
-    .mapa-grid {
-        display: inline-block;
-        border: 2px solid #333;
-        border-radius: 8px;
+    .mapa-wrapper {
+        background: #0e0b07;
+        border: 1px solid rgba(201, 168, 76, 0.35);
+        border-radius: 6px;
         overflow: hidden;
+        display: inline-flex;
+        flex-direction: column;
+        box-shadow: 0 0 0 1px rgba(201,168,76,0.08), 0 8px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(201,168,76,0.12);
+        position: relative;
     }
 
-    .mapa-linha {
+    /* Cantos decorativos */
+    .mapa-corner {
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        border-color: rgba(201,168,76,0.6);
+        border-style: solid;
+        z-index: 5;
+    }
+
+        .mapa-corner.tl {
+            top: 6px;
+            left: 6px;
+            border-width: 2px 0 0 2px;
+        }
+
+        .mapa-corner.tr {
+            top: 6px;
+            right: 6px;
+            border-width: 2px 2px 0 0;
+        }
+
+        .mapa-corner.bl {
+            bottom: 6px;
+            left: 6px;
+            border-width: 0 0 2px 2px;
+        }
+
+        .mapa-corner.br {
+            bottom: 6px;
+            right: 6px;
+            border-width: 0 2px 2px 0;
+        }
+
+    .mapa-header {
+        padding: 0.7rem 1.2rem;
+        background: linear-gradient(to right, rgba(201,168,76,0.03), rgba(201,168,76,0.1), rgba(201,168,76,0.03));
+        border-bottom: 1px solid rgba(201,168,76,0.2);
+        text-align: center;
+        position: relative;
+    }
+
+    .mapa-title {
+        font-family: 'Cinzel', serif;
+        color: #c9a84c;
+        font-size: 0.8rem;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        opacity: 0.9;
+    }
+
+    .mapa-body {
+        padding: 16px 16px 12px;
+        background: radial-gradient(ellipse at 20% 30%, rgba(120,80,20,0.06) 0%, transparent 60%), radial-gradient(ellipse at 80% 70%, rgba(20,60,80,0.06) 0%, transparent 60%), #0e0b07;
+    }
+
+    /* ── Hexágonos ── */
+    .mapa-grid {
         display: flex;
+        flex-direction: column;
+        gap: 0px;
     }
 
-    .mapa-celula {
+    .mapa-row {
+        display: flex;
+        gap: 3px;
+        margin-bottom: -14px; /* sobreposição vertical dos hexágonos */
+    }
+
+        .mapa-row.row-offset {
+            margin-left: 37px; /* offset para criar grade hex */
+        }
+
+    .hex-wrap {
         width: 70px;
-        height: 70px;
-        border: 1px solid rgba(0,0,0,0.15);
+        height: 80px;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .hex {
+        width: 70px;
+        height: 80px;
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        position: relative;
+        transition: filter 0.2s, transform 0.2s;
+        cursor: default;
+    }
+
+    .hex-wrap:hover .hex {
+        filter: brightness(1.3);
+        transform: scale(1.06);
+        z-index: 10;
+    }
+
+    /* Borda do hex via pseudo elemento */
+    .hex::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        background: rgba(0,0,0,0.25);
+        z-index: 1;
+        /* simula borda escura nas bordas do clip */
+        box-shadow: inset 0 0 0 2px rgba(0,0,0,0.4);
+    }
+
+    .hex-inner {
+        position: absolute;
+        inset: 0;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        cursor: default;
-        transition: transform 0.1s;
-        position: relative;
+        z-index: 2;
+        gap: 2px;
     }
 
-        .mapa-celula:hover {
-            transform: scale(1.05);
-            z-index: 10;
-        }
-
-    .icone-terreno {
-        font-size: 1.6rem;
+    .hex-icone {
+        font-size: 1.5rem;
+        line-height: 1;
+        filter: drop-shadow(0 1px 3px rgba(0,0,0,0.7));
     }
 
-    .nome-civ {
-        font-size: 0.55rem;
-        font-weight: bold;
-        background: rgba(0,0,0,0.5);
-        color: white;
-        padding: 1px 3px;
-        border-radius: 3px;
-        margin-top: 2px;
+    .hex-civ {
+        font-family: 'Cinzel', serif;
+        font-size: 0.42rem;
+        font-weight: 700;
+        color: #fff;
+        background: rgba(0,0,0,0.6);
+        padding: 1px 4px;
+        border-radius: 2px;
+        letter-spacing: 0.05em;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+        white-space: nowrap;
+        border: 1px solid rgba(255,255,255,0.1);
     }
 
+    /* ── Terrenos ── */
     .terreno-vazio {
-        background-color: #e8e8e8;
+        background: #12111a;
     }
 
     .terreno-planicie {
-        background-color: #c8e6c9;
+        background: linear-gradient(160deg, #2e6b1a 0%, #3d8a22 50%, #2a5f18 100%);
     }
 
     .terreno-floresta {
-        background-color: #388e3c;
+        background: linear-gradient(160deg, #143d0c 0%, #1e5412 50%, #112e09 100%);
     }
 
     .terreno-montanha {
-        background-color: #90a4ae;
+        background: linear-gradient(160deg, #2e2e3a 0%, #444455 50%, #3a3a48 100%);
     }
 
     .terreno-rio {
-        background-color: #81d4fa;
+        background: linear-gradient(160deg, #0f2d5a 0%, #1a4a8a 50%, #0d2550 100%);
     }
 
     .terreno-deserto {
-        background-color: #fff176;
+        background: linear-gradient(160deg, #6a4e10 0%, #9a7220 50%, #7a5c14 100%);
     }
+
+    /* ── Legenda ── */
+    .mapa-legenda {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 20px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(201,168,76,0.12);
+        flex-wrap: wrap;
+    }
+
+    .leg-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-family: 'Cinzel', serif;
+        font-size: 0.55rem;
+        color: #7a6840;
+        letter-spacing: 0.08em;
+    }
+
+    .leg-dot {
+        width: 10px;
+        height: 10px;
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        flex-shrink: 0;
+    }
+
+        .leg-dot.planicie {
+            background: #3d8a22;
+        }
+
+        .leg-dot.floresta {
+            background: #1e5412;
+        }
+
+        .leg-dot.montanha {
+            background: #444455;
+        }
+
+        .leg-dot.rio {
+            background: #1a4a8a;
+        }
+
+        .leg-dot.deserto {
+            background: #9a7220;
+        }
 </style>
 
 @code {
@@ -104,10 +279,10 @@
     private RegiaoModel? ObterRegiao(int x, int y)
         => Regioes.FirstOrDefault(r => r.X == x && r.Y == y);
 
-    private string ObterClasseTerreno(RegiaoModel? regiao)
+    private string ObterClasseTerreno(RegiaoModel? r)
     {
-        if (regiao is null) return "terreno-vazio";
-        return regiao.Terreno switch
+        if (r is null) return "terreno-vazio";
+        return r.Terreno switch
         {
             "Planicie" => "terreno-planicie",
             "Floresta" => "terreno-floresta",
@@ -118,23 +293,23 @@
         };
     }
 
-    private string ObterIcone(RegiaoModel? regiao)
+    private string ObterIcone(RegiaoModel? r)
     {
-        if (regiao is null) return "⬜";
-        return regiao.Terreno switch
+        if (r is null) return "·";
+        return r.Terreno switch
         {
             "Planicie" => "🌾",
             "Floresta" => "🌲",
             "Montanha" => "⛰️",
             "Rio" => "🏞️",
             "Deserto" => "🏜️",
-            _ => "⬜"
+            _ => "·"
         };
     }
 
-    private string ObterTooltip(RegiaoModel? regiao, int x, int y)
+    private string ObterTooltip(RegiaoModel? r, int x, int y)
     {
-        if (regiao is null) return $"({x},{y}) — Território desocupado";
-        return $"({x},{y}) {regiao.Nome} — {regiao.Terreno} — {regiao.CivilizacaoNome}";
+        if (r is null) return $"({x},{y}) Território desocupado";
+        return $"{r.Nome} — {r.Terreno} — {r.CivilizacaoNome}";
     }
 }

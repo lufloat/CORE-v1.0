@@ -3,121 +3,504 @@
 @using CORE.Blazor.Services
 @using CORE.Blazor.Models
 @inject ApiService ApiService
-@using CORE.Blazor.Components
+@inject AudioService Audio
 
-<div class="container mt-4">
+<div class="game-wrapper">
+    <div class="game-bg"></div>
+
     @if (partida is null)
     {
-        <div class="text-center">
-            <div class="spinner-border" role="status"></div>
-            <p>Carregando partida...</p>
+        <div class="loading-screen">
+            <div class="loading-icon">⚔️</div>
+            <p class="loading-text">Carregando o mundo...</p>
         </div>
     }
     else
     {
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>⚔️ @partida.Nome</h2>
-            <MapaGrid Regioes="regioes" TamanhoX="5" TamanhoY="5" />
-            <span class="badge bg-primary fs-6">Turno @partida.TurnoAtual</span>
-        </div>
-
-        <!-- Painel das Civilizações -->
-        <div class="row mb-4">
-            @foreach (var civ in partida.Civilizacoes)
-            {
-                <div class="col-md-4 mb-3">
-                    <div class="card h-100 @(combate?.Vencedor == civ.Nome ? "border-success" : combate?.Perdedor == civ.Nome ? "border-danger" : "")">
-                        <div class="card-header d-flex justify-content-between">
-                            <strong>@civ.Nome</strong>
-                            <span class="badge bg-secondary">@civ.Era</span>
-                        </div>
-                        <div class="card-body">
-                            <table class="table table-sm">
-                                <tbody>
-                                    <tr><td>👥 População</td><td><strong>@civ.Populacao</strong></td></tr>
-                                    <tr><td>🌾 Comida</td><td><strong class="@(civ.Comida < 15 ? "text-danger" : "")">@civ.Comida</strong></td></tr>
-                                    <tr><td>🪵 Madeira</td><td><strong>@civ.Madeira</strong></td></tr>
-                                    <tr><td>🪨 Pedra</td><td><strong>@civ.Pedra</strong></td></tr>
-                                    <tr><td>😊 Moral</td><td><strong class="@(civ.Moral < 20 ? "text-danger" : "")">@civ.Moral</strong></td></tr>
-                                    <tr><td>🔬 Tecnologia</td><td><strong>@civ.Tecnologia</strong></td></tr>
-                                    <tr><td>⚔️ Poder Militar</td><td><strong>@civ.PoderMilitar</strong></td></tr>
-                                    <tr><td>🗺️ Territórios</td><td><strong>@civ.Territorios</strong></td></tr>
-                                </tbody>
-                            </table>
-
-                            @if (!string.IsNullOrEmpty(civ.UltimoEvento))
-                            {
-                                <div class="alert alert-info py-1 px-2 mb-2">
-                                    📜 @civ.UltimoEvento
-                                </div>
-                            }
-
-                            <!-- Botões de Combate -->
-                            @if (atacanteSelecionado is null)
-                            {
-                                <button class="btn btn-outline-warning btn-sm w-100"
-                                        @onclick="() => SelecionarAtacante(civ)">
-                                    ⚔️ Atacar com esta
-                                </button>
-                            }
-                            else if (atacanteSelecionado.Id != civ.Id)
-                            {
-                                <button class="btn btn-danger btn-sm w-100"
-                                        @onclick="() => ExecutarCombate(civ)"
-                                        disabled="@carregando">
-                                    🎯 Atacar @civ.Nome
-                                </button>
-                            }
-                            else
-                            {
-                                <button class="btn btn-secondary btn-sm w-100"
-                                        @onclick="CancelarAtaque">
-                                    ✕ Cancelar ataque
-                                </button>
-                            }
-                        </div>
-                    </div>
+        <div class="game-content">
+            <!-- Header -->
+            <div class="game-header">
+                <div class="header-left">
+                    <h2 class="partida-nome">@partida.Nome</h2>
                 </div>
-            }
-        </div>
-
-        <!-- Resultado do Combate -->
-        @if (combate is not null)
-        {
-            <div class="alert @(combate.Vencedor == atacanteSelecionado?.Nome ? "alert-success" : "alert-warning") mb-4">
-                <h5>⚔️ Resultado do Combate</h5>
-                <p>@combate.Descricao</p>
-                <small>
-                    Recursos roubados: <strong>@combate.RecursosRoubados</strong> |
-                    Territórios roubados: <strong>@combate.TerritoriosRoubados</strong>
-                </small>
+                <div class="header-right">
+                    <div class="turno-badge">
+                        <span class="turno-label">ANO</span>
+                        <span class="turno-num">@(partida.TurnoAtual * 10)</span>
+                    </div>
+                    <!-- Controle de música na tela de jogo -->
+                    <button class="btn-audio" @onclick="ToggleMusica" title="@(musicaAtiva ? "Silenciar" : "Ligar música")">
+                        @(musicaAtiva ? "🔊" : "🔇")
+                    </button>
+                </div>
             </div>
-        }
 
-        <!-- Mensagem de erro -->
-        @if (!string.IsNullOrEmpty(erro))
-        {
-            <div class="alert alert-danger">@erro</div>
-        }
+            <div class="game-layout">
+                <!-- Mapa -->
+                <div class="mapa-section">
+                    <MapaGrid Regioes="regioes" TamanhoX="5" TamanhoY="5" />
+                </div>
 
-        <!-- Botão Avançar Turno -->
-        <div class="text-center">
-            <button class="btn btn-primary btn-lg"
-                    @onclick="AvancarTurno"
-                    disabled="@carregando">
-                @if (carregando)
-                {
-                    <span class="spinner-border spinner-border-sm me-2"></span>
-                    <span>Processando...</span>
-                }
-                else
-                {
-                    <span>▶️ Avançar Turno</span>
-                }
-            </button>
+                <!-- Painel direito -->
+                <div class="right-panel">
+                    <!-- Civilizações -->
+                    <div class="civs-grid">
+                        @foreach (var civ in partida.Civilizacoes)
+                        {
+                            <div class="civ-card @(combate?.Vencedor == civ.Nome ? "card-vitoria" : combate?.Perdedor == civ.Nome ? "card-derrota" : "")">
+                                <div class="civ-header">
+                                    <span class="civ-nome">@civ.Nome</span>
+                                    <span class="civ-era">@civ.Era</span>
+                                </div>
+
+                                <div class="recursos-grid">
+                                    <div class="recurso">
+                                        <span class="r-icon">👥</span>
+                                        <span class="r-val">@civ.Populacao</span>
+                                    </div>
+                                    <div class="recurso @(civ.Comida < 15 ? "r-critico" : "")">
+                                        <span class="r-icon">🌾</span>
+                                        <span class="r-val">@civ.Comida</span>
+                                    </div>
+                                    <div class="recurso">
+                                        <span class="r-icon">🪵</span>
+                                        <span class="r-val">@civ.Madeira</span>
+                                    </div>
+                                    <div class="recurso">
+                                        <span class="r-icon">🪨</span>
+                                        <span class="r-val">@civ.Pedra</span>
+                                    </div>
+                                    <div class="recurso @(civ.Moral < 20 ? "r-critico" : "")">
+                                        <span class="r-icon">😊</span>
+                                        <span class="r-val">@civ.Moral</span>
+                                    </div>
+                                    <div class="recurso">
+                                        <span class="r-icon">🔬</span>
+                                        <span class="r-val">@civ.Tecnologia</span>
+                                    </div>
+                                    <div class="recurso">
+                                        <span class="r-icon">⚔️</span>
+                                        <span class="r-val">@civ.PoderMilitar</span>
+                                    </div>
+                                    <div class="recurso">
+                                        <span class="r-icon">🗺️</span>
+                                        <span class="r-val">@civ.Territorios</span>
+                                    </div>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(civ.UltimoEvento) && civ.UltimoEvento != "Nada aconteceu")
+                                {
+                                    <div class="evento-badge">📜 @civ.UltimoEvento</div>
+                                }
+
+                                <div class="civ-actions">
+                                    @if (atacanteSelecionado is null)
+                                    {
+                                        <button class="btn-atacar" @onclick="() => SelecionarAtacante(civ)">
+                                            ⚔ Atacar com esta
+                                        </button>
+                                    }
+                                    else if (atacanteSelecionado.Id != civ.Id)
+                                    {
+                                        <button class="btn-alvo" @onclick="() => ExecutarCombate(civ)" disabled="@carregando">
+                                            🎯 Atacar @civ.Nome
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn-cancelar" @onclick="CancelarAtaque">
+                                            ✕ Cancelar
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Resultado combate -->
+                    @if (combate is not null)
+                    {
+                        <div class="combate-result">
+                            <div class="combate-title">⚔ Resultado da Batalha</div>
+                            <div class="combate-desc">@combate.Descricao</div>
+                            <div class="combate-stats">
+                                <span>🌾 +@combate.RecursosRoubados</span>
+                                <span>🗺️ +@combate.TerritoriosRoubados</span>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(erro))
+                    {
+                        <div class="alert-erro">⚠ @erro</div>
+                    }
+
+                    <!-- Botão turno -->
+                    <button class="btn-turno" @onclick="AvancarTurno" disabled="@carregando">
+                        @if (carregando)
+                        {
+                            <span>⏳ Processando...</span>
+                        }
+                        else
+                        {
+                            <span>▶ Avançar 10 Anos</span>
+                        }
+                    </button>
+                </div>
+            </div>
         </div>
     }
 </div>
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+    .game-wrapper {
+        min-height: 100vh;
+        position: relative;
+        background: #08060a;
+        overflow-x: hidden;
+    }
+
+    .game-bg {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(ellipse at 0% 0%, rgba(100, 60, 10, 0.12) 0%, transparent 50%), radial-gradient(ellipse at 100% 100%, rgba(40, 20, 80, 0.15) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .loading-screen {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .loading-icon {
+        font-size: 4rem;
+        animation: spin 2s linear infinite;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .loading-text {
+        font-family: 'Cinzel', serif;
+        color: #c9a84c;
+        letter-spacing: 0.2em;
+    }
+
+    .game-content {
+        position: relative;
+        z-index: 1;
+        padding: 1.5rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .game-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .partida-nome {
+        font-family: 'Cinzel', serif;
+        color: #c9a84c;
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+    }
+
+    .turno-badge {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: rgba(201, 168, 76, 0.1);
+        border: 1px solid rgba(201, 168, 76, 0.3);
+        padding: 0.5rem 1.5rem;
+        border-radius: 3px;
+    }
+
+    .turno-label {
+        font-family: 'Cinzel', serif;
+        color: #8a7040;
+        font-size: 0.65rem;
+        letter-spacing: 0.3em;
+    }
+
+    .turno-num {
+        font-family: 'Cinzel', serif;
+        color: #c9a84c;
+        font-size: 1.8rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    /* Botão de áudio no header */
+    .btn-audio {
+        background: rgba(201, 168, 76, 0.08);
+        border: 1px solid rgba(201, 168, 76, 0.25);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .btn-audio:hover {
+            background: rgba(201, 168, 76, 0.2);
+            border-color: rgba(201, 168, 76, 0.5);
+        }
+
+    .game-layout {
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .mapa-section {
+        flex-shrink: 0;
+    }
+
+    .right-panel {
+        flex: 1;
+        min-width: 300px;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .civs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1rem;
+    }
+
+    .civ-card {
+        background: rgba(12, 10, 8, 0.95);
+        border: 1px solid rgba(201, 168, 76, 0.2);
+        border-radius: 4px;
+        padding: 1rem;
+        transition: border-color 0.3s;
+    }
+
+        .civ-card:hover {
+            border-color: rgba(201, 168, 76, 0.4);
+        }
+
+    .card-vitoria {
+        border-color: rgba(80, 200, 80, 0.5) !important;
+        box-shadow: 0 0 20px rgba(80, 200, 80, 0.1);
+    }
+
+    .card-derrota {
+        border-color: rgba(200, 60, 60, 0.5) !important;
+        box-shadow: 0 0 20px rgba(200, 60, 60, 0.1);
+    }
+
+    .civ-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.8rem;
+        padding-bottom: 0.6rem;
+        border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+    }
+
+    .civ-nome {
+        font-family: 'Cinzel', serif;
+        color: #c9a84c;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .civ-era {
+        font-family: 'Cinzel', serif;
+        color: #5a4a30;
+        font-size: 0.65rem;
+        letter-spacing: 0.1em;
+        background: rgba(201, 168, 76, 0.08);
+        padding: 2px 8px;
+        border-radius: 2px;
+        border: 1px solid rgba(201, 168, 76, 0.15);
+    }
+
+    .recursos-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.3rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .recurso {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.5rem;
+        background: rgba(255,255,255,0.02);
+        border-radius: 2px;
+    }
+
+    .r-critico {
+        background: rgba(200, 60, 60, 0.12);
+    }
+
+    .r-icon {
+        font-size: 0.9rem;
+    }
+
+    .r-val {
+        font-family: 'Crimson Text', serif;
+        color: #d4b870;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .r-critico .r-val {
+        color: #e07070;
+    }
+
+    .evento-badge {
+        font-family: 'Crimson Text', serif;
+        font-style: italic;
+        color: #8a9a70;
+        font-size: 0.85rem;
+        padding: 0.4rem 0.6rem;
+        background: rgba(100, 150, 60, 0.08);
+        border-left: 2px solid rgba(100, 150, 60, 0.4);
+        margin-bottom: 0.8rem;
+    }
+
+    .civ-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-atacar, .btn-alvo, .btn-cancelar {
+        flex: 1;
+        padding: 0.5rem;
+        border-radius: 2px;
+        cursor: pointer;
+        font-family: 'Cinzel', serif;
+        font-size: 0.7rem;
+        letter-spacing: 0.05em;
+        transition: all 0.2s;
+        border: 1px solid;
+    }
+
+    .btn-atacar {
+        background: rgba(201, 168, 76, 0.1);
+        border-color: rgba(201, 168, 76, 0.3);
+        color: #c9a84c;
+    }
+
+        .btn-atacar:hover {
+            background: rgba(201, 168, 76, 0.2);
+        }
+
+    .btn-alvo {
+        background: rgba(200, 60, 60, 0.15);
+        border-color: rgba(200, 60, 60, 0.4);
+        color: #e07070;
+    }
+
+        .btn-alvo:hover {
+            background: rgba(200, 60, 60, 0.25);
+        }
+
+    .btn-cancelar {
+        background: rgba(80, 80, 80, 0.2);
+        border-color: rgba(120, 120, 120, 0.3);
+        color: #808080;
+    }
+
+    .combate-result {
+        background: rgba(201, 168, 76, 0.06);
+        border: 1px solid rgba(201, 168, 76, 0.25);
+        border-radius: 3px;
+        padding: 1rem;
+    }
+
+    .combate-title {
+        font-family: 'Cinzel', serif;
+        color: #c9a84c;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .combate-desc {
+        font-family: 'Crimson Text', serif;
+        color: #d4b870;
+        font-size: 1rem;
+        font-style: italic;
+        margin-bottom: 0.5rem;
+    }
+
+    .combate-stats {
+        display: flex;
+        gap: 1rem;
+        font-family: 'Cinzel', serif;
+        color: #8a7040;
+        font-size: 0.8rem;
+    }
+
+    .alert-erro {
+        background: rgba(200, 60, 60, 0.1);
+        border: 1px solid rgba(200, 60, 60, 0.3);
+        color: #e07070;
+        padding: 0.7rem 1rem;
+        border-radius: 2px;
+        font-family: 'Crimson Text', serif;
+    }
+
+    .btn-turno {
+        background: linear-gradient(135deg, #5a3a08, #c9a84c, #5a3a08);
+        border: none;
+        color: #0a0800;
+        padding: 1rem 2rem;
+        border-radius: 3px;
+        cursor: pointer;
+        font-family: 'Cinzel', serif;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        width: 100%;
+        transition: all 0.2s;
+        box-shadow: 0 4px 20px rgba(201, 168, 76, 0.25);
+    }
+
+        .btn-turno:hover:not(:disabled) {
+            box-shadow: 0 4px 30px rgba(201, 168, 76, 0.45);
+            transform: translateY(-1px);
+        }
+
+        .btn-turno:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+</style>
 
 @code {
     [Parameter] public Guid PartidaId { get; set; }
@@ -125,9 +508,10 @@
     private PartidaModel? partida;
     private CombateModel? combate;
     private CivilizacaoModel? atacanteSelecionado;
+    private List<RegiaoModel> regioes = new();
     private bool carregando = false;
     private string erro = string.Empty;
-    private List<RegiaoModel> regioes = new();
+    private bool musicaAtiva = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -135,9 +519,24 @@
         regioes = await ApiService.GetRegioesByPartidaAsync(PartidaId);
     }
 
-    private async Task CarregarPartida()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        partida = await ApiService.GetPartidaAsync(PartidaId);
+        // Não inicia música automaticamente — aguarda o usuário clicar no botão
+        // para evitar bloqueio de autoplay dos browsers
+    }
+
+    private async Task ToggleMusica()
+    {
+        if (musicaAtiva)
+        {
+            await Audio.PararMusica();
+            musicaAtiva = false;
+        }
+        else
+        {
+            await Audio.TocarMusica("/audio/musica-fundo.mp3", 0.3);
+            musicaAtiva = true;
+        }
     }
 
     private async Task AvancarTurno()
@@ -145,6 +544,9 @@
         erro = string.Empty;
         combate = null;
         carregando = true;
+
+        // Efeito sonoro de turno
+        await Audio.TocarEfeito("/audio/turno.mp3", 0.5);
 
         partida = await ApiService.AvancarTurnoAsync(PartidaId);
         regioes = await ApiService.GetRegioesByPartidaAsync(PartidaId);
@@ -171,16 +573,29 @@
     private async Task ExecutarCombate(CivilizacaoModel defensor)
     {
         if (atacanteSelecionado is null) return;
-
         erro = string.Empty;
         carregando = true;
 
         combate = await ApiService.CombaterAsync(PartidaId, atacanteSelecionado.Id, defensor.Id);
 
         if (combate is null)
+        {
             erro = "Erro ao executar combate.";
+            await Audio.TocarEfeito("/audio/combate.mp3", 0.6);
+        }
+        else if (combate.Vencedor == atacanteSelecionado.Nome)
+        {
+            // Atacante venceu
+            await Audio.TocarEfeito("/audio/vitoria.mp3", 0.7);
+        }
+        else
+        {
+            // Atacante perdeu
+            await Audio.TocarEfeito("/audio/combate.mp3", 0.6);
+        }
 
-        partida = await ApiService.AvancarTurnoAsync(PartidaId);
+        partida = await ApiService.GetPartidaAsync(PartidaId);
+        regioes = await ApiService.GetRegioesByPartidaAsync(PartidaId);
         atacanteSelecionado = null;
         carregando = false;
     }

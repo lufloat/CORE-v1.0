@@ -4,68 +4,352 @@
 @using CORE.Blazor.Models
 @inject ApiService ApiService
 @inject NavigationManager Nav
+@inject AudioService Audio
 
-<div class="container mt-5">
-    <h1 class="text-center mb-4">⚔️ CORE — Simulador de Civilizações</h1>
+<div class="home-wrapper">
+    <div class="home-bg"></div>
+    <div class="home-content">
+        <div class="logo-area">
+            <div class="logo-icon">⚔️</div>
+            <h1 class="game-title">CORE</h1>
+            <p class="game-subtitle">SIMULADOR DE CIVILIZAÇÕES</p>
+            <div class="title-divider"></div>
+        </div>
 
-    <div class="card mx-auto" style="max-width: 500px;">
-        <div class="card-body">
-            <h4 class="card-title">Nova Partida</h4>
-            <p class="text-muted">Informe os nomes das civilizações (mínimo 2)</p>
+        <div class="card-panel">
+            <h3 class="panel-title">⚔ Nova Partida</h3>
+            <p class="panel-desc">Escolha os nomes das civilizações que disputarão o domínio do mundo</p>
 
             @for (int i = 0; i < nomes.Count; i++)
             {
                 var index = i;
-                <div class="input-group mb-2">
-                    <span class="input-group-text">@(index + 1)</span>
-                    <input class="form-control"
-                           placeholder="Nome da civilização"
+                <div class="input-row">
+                    <span class="input-num">@(index + 1)</span>
+                    <input class="game-input"
+                           placeholder="Nome da civilização..."
                            @bind="nomes[index]" />
                     @if (nomes.Count > 2)
                     {
-                        <button class="btn btn-outline-danger"
-                                @onclick="() => RemoverCivilizacao(index)">
-                            ✕
-                        </button>
+                        <button class="btn-remove" @onclick="() => RemoverCivilizacao(index)">✕</button>
                     }
                 </div>
             }
 
-            <button class="btn btn-outline-secondary w-100 mb-3"
-                    @onclick="AdicionarCivilizacao">
-                + Adicionar Civilização
-            </button>
+            @if (nomes.Count < 6)
+            {
+                <button class="btn-add" @onclick="AdicionarCivilizacao">+ Adicionar Civilização</button>
+            }
 
             @if (!string.IsNullOrEmpty(erro))
             {
-                <div class="alert alert-danger">@erro</div>
+                <div class="alert-error">⚠ @erro</div>
             }
 
-            <button class="btn btn-primary w-100"
-                    @onclick="CriarPartida"
-                    disabled="@carregando">
+            <button class="btn-start" @onclick="CriarPartida" disabled="@carregando">
                 @if (carregando)
                 {
-                    <span>Criando...</span>
+                    <span class="loading-dots">Forjando o mundo<span>...</span></span>
                 }
                 else
                 {
-                    <span>⚔️ Iniciar Partida</span>
+                    <span>⚔ INICIAR CONQUISTA</span>
                 }
             </button>
         </div>
+
+        <!-- Controle de música -->
+        <div class="audio-control">
+            <button class="btn-audio" @onclick="ToggleMusica" title="@(musicaAtiva ? "Silenciar música" : "Ligar música")">
+                @(musicaAtiva ? "🔊" : "🔇")
+            </button>
+            <span class="audio-label">@(musicaAtiva ? "Música ativa" : "Música desligada")</span>
+        </div>
     </div>
 </div>
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    .home-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        background: #0a0a0f;
+    }
+
+    .home-bg {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at 20% 50%, rgba(120, 80, 20, 0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(60, 40, 100, 0.2) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(20, 60, 40, 0.15) 0%, transparent 60%);
+        background-color: #0a0a0f;
+    }
+
+        .home-bg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9a84c' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+    .home-content {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 480px;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .logo-area {
+        text-align: center;
+    }
+
+    .logo-icon {
+        font-size: 4rem;
+        filter: drop-shadow(0 0 20px rgba(201, 168, 76, 0.6));
+        animation: pulse-glow 3s ease-in-out infinite;
+    }
+
+    @@keyframes pulse-glow {
+        0%, 100% {
+            filter: drop-shadow(0 0 20px rgba(201, 168, 76, 0.6));
+        }
+
+        50% {
+            filter: drop-shadow(0 0 40px rgba(201, 168, 76, 0.9));
+        }
+    }
+
+    .game-title {
+        font-family: 'Cinzel', serif;
+        font-size: 5rem;
+        font-weight: 900;
+        color: #c9a84c;
+        letter-spacing: 0.3em;
+        text-shadow: 0 0 30px rgba(201, 168, 76, 0.5), 0 2px 4px rgba(0,0,0,0.8);
+        line-height: 1;
+    }
+
+    .game-subtitle {
+        font-family: 'Cinzel', serif;
+        font-size: 0.75rem;
+        color: #8a7040;
+        letter-spacing: 0.4em;
+        margin-top: 0.5rem;
+    }
+
+    .title-divider {
+        width: 200px;
+        height: 1px;
+        background: linear-gradient(to right, transparent, #c9a84c, transparent);
+        margin: 1rem auto 0;
+    }
+
+    .card-panel {
+        width: 100%;
+        background: rgba(15, 12, 8, 0.9);
+        border: 1px solid rgba(201, 168, 76, 0.3);
+        border-radius: 4px;
+        padding: 2rem;
+        box-shadow: 0 0 40px rgba(0,0,0,0.8), inset 0 1px 0 rgba(201, 168, 76, 0.1);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+        .card-panel::before {
+            content: '◆';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #c9a84c;
+            font-size: 1rem;
+            background: #0a0a0f;
+            padding: 0 8px;
+        }
+
+    .panel-title {
+        font-family: 'Cinzel', serif;
+        color: #c9a84c;
+        font-size: 1.2rem;
+        letter-spacing: 0.1em;
+        text-align: center;
+    }
+
+    .panel-desc {
+        font-family: 'Crimson Text', serif;
+        color: #7a6a50;
+        font-size: 1rem;
+        text-align: center;
+        font-style: italic;
+    }
+
+    .input-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .input-num {
+        font-family: 'Cinzel', serif;
+        color: #c9a84c;
+        font-size: 0.9rem;
+        width: 20px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .game-input {
+        flex: 1;
+        background: rgba(201, 168, 76, 0.05);
+        border: 1px solid rgba(201, 168, 76, 0.25);
+        border-radius: 2px;
+        padding: 0.6rem 1rem;
+        color: #e8d5a0;
+        font-family: 'Crimson Text', serif;
+        font-size: 1rem;
+        outline: none;
+        transition: all 0.2s;
+    }
+
+        .game-input:focus {
+            border-color: rgba(201, 168, 76, 0.6);
+            background: rgba(201, 168, 76, 0.08);
+            box-shadow: 0 0 12px rgba(201, 168, 76, 0.15);
+        }
+
+        .game-input::placeholder {
+            color: #5a4a30;
+        }
+
+    .btn-remove {
+        background: rgba(180, 40, 40, 0.2);
+        border: 1px solid rgba(180, 40, 40, 0.4);
+        color: #c04040;
+        width: 30px;
+        height: 30px;
+        border-radius: 2px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+
+        .btn-remove:hover {
+            background: rgba(180, 40, 40, 0.4);
+        }
+
+    .btn-add {
+        background: transparent;
+        border: 1px dashed rgba(201, 168, 76, 0.3);
+        color: #8a7040;
+        padding: 0.5rem;
+        border-radius: 2px;
+        cursor: pointer;
+        font-family: 'Crimson Text', serif;
+        font-size: 0.95rem;
+        width: 100%;
+        transition: all 0.2s;
+    }
+
+        .btn-add:hover {
+            border-color: rgba(201, 168, 76, 0.6);
+            color: #c9a84c;
+        }
+
+    .alert-error {
+        background: rgba(180, 40, 40, 0.15);
+        border: 1px solid rgba(180, 40, 40, 0.4);
+        color: #e07070;
+        padding: 0.6rem 1rem;
+        border-radius: 2px;
+        font-family: 'Crimson Text', serif;
+        font-size: 0.95rem;
+    }
+
+    .btn-start {
+        background: linear-gradient(135deg, #8a6010, #c9a84c, #8a6010);
+        border: none;
+        color: #0a0a0f;
+        padding: 1rem;
+        border-radius: 2px;
+        cursor: pointer;
+        font-family: 'Cinzel', serif;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        width: 100%;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        box-shadow: 0 4px 20px rgba(201, 168, 76, 0.3);
+    }
+
+        .btn-start:hover:not(:disabled) {
+            box-shadow: 0 4px 30px rgba(201, 168, 76, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-start:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    /* Controle de áudio */
+    .audio-control {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .btn-audio {
+        background: rgba(201, 168, 76, 0.08);
+        border: 1px solid rgba(201, 168, 76, 0.25);
+        border-radius: 50%;
+        width: 38px;
+        height: 38px;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .btn-audio:hover {
+            background: rgba(201, 168, 76, 0.2);
+            border-color: rgba(201, 168, 76, 0.5);
+        }
+
+    .audio-label {
+        font-family: 'Crimson Text', serif;
+        color: #5a4a30;
+        font-size: 0.85rem;
+        font-style: italic;
+    }
+</style>
 
 @code {
     private List<string> nomes = new() { "", "" };
     private bool carregando = false;
     private string erro = string.Empty;
+    private bool musicaAtiva = false;
 
     private void AdicionarCivilizacao()
     {
-        if (nomes.Count < 6)
-            nomes.Add("");
+        if (nomes.Count < 6) nomes.Add("");
     }
 
     private void RemoverCivilizacao(int index)
@@ -73,10 +357,23 @@
         nomes.RemoveAt(index);
     }
 
+    private async Task ToggleMusica()
+    {
+        if (musicaAtiva)
+        {
+            await Audio.PararMusica();
+            musicaAtiva = false;
+        }
+        else
+        {
+            await Audio.TocarMusica("/audio/musica-fundo.mp3", 0.3);
+            musicaAtiva = true;
+        }
+    }
+
     private async Task CriarPartida()
     {
         erro = string.Empty;
-
         var nomesValidos = nomes.Where(n => !string.IsNullOrWhiteSpace(n)).ToList();
 
         if (nomesValidos.Count < 2)
@@ -85,10 +382,11 @@
             return;
         }
 
+        // Toca efeito de início ao clicar em Iniciar
+        await Audio.TocarEfeito("/audio/turno.mp3", 0.5);
+
         carregando = true;
-
         var partida = await ApiService.CriarPartidaAsync(nomesValidos);
-
         carregando = false;
 
         if (partida is not null)
