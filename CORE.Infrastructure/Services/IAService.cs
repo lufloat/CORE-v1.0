@@ -35,15 +35,16 @@ public class IAService : IIAService
 
         var json = JsonSerializer.Serialize(payload);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
-
         var response = await _httpClient.PostAsync("decidir", content);
         response.EnsureSuccessStatusCode();
 
         var resultado = await response.Content.ReadAsStringAsync();
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(resultado);
+        var decisaoStr = jsonElement.GetProperty("decisao").GetString();
 
-        if (Enum.TryParse<TipoDecisao>(resultado.Trim('"'), ignoreCase: true, out var decisao))
+        if (Enum.TryParse<TipoDecisao>(decisaoStr, ignoreCase: true, out var decisao))
             return decisao;
 
-        throw new Exception($"IA retornou valor inválido: {resultado}");
+        throw new Exception($"IA retornou valor inválido: {decisaoStr}");
     }
 }
