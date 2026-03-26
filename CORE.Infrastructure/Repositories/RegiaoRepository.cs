@@ -14,6 +14,18 @@ public class RegiaoRepository : IRegiaoRepository
         this.context = context;
     }
 
+
+    public async Task<IEnumerable<Regiao>> GetAllByPartidaAsync(Guid partidaId)
+    {
+        return await context.Regioes
+            .Where(r => context.Civilizacoes
+                .Where(c => c.PartidaId == partidaId)
+                .Select(c => c.Id)
+                .Contains(r.CivilizacaoId))
+            .ToListAsync();
+    }
+
+
     public async Task<IEnumerable<Regiao>> GetControladasAsync(Guid civilizacaoId)
     {
         return await context.Regioes

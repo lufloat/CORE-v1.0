@@ -1,5 +1,6 @@
 ﻿using CORE.Application.Interfaces;
 using CORE.Domain.Entities;
+using CORE.Domain.Services;
 using Microsoft.Extensions.Logging;
 
 namespace CORE.Application.UseCases;
@@ -45,25 +46,33 @@ public class AvancarTurnoPartida
         {
             var regioes = await regiaoRepository.GetControladasAsync(civilizacao.Id);
             var decisao = await iaService.ObterDecisaoAsync(civilizacao);
-
-            logger.LogInformation("[Turno {Turno}] {Civilizacao} decidiu: {Decisao}",
-                partida.TurnoAtual + 1, civilizacao.Nome, decisao);
-
-            // alertas de recursos críticos
-            if (civilizacao.Comida < 15)
-                logger.LogWarning("{Civilizacao} está com comida crítica: {Comida}",
-                    civilizacao.Nome, civilizacao.Comida);
-
-            if (civilizacao.Moral < 20)
-                logger.LogWarning("{Civilizacao} está com moral crítica: {Moral}",
-                    civilizacao.Nome, civilizacao.Moral);
-
-            if (civilizacao.Populacao <= 0)
-                logger.LogError("{Civilizacao} ficou sem população! Turno {Turno}",
-                    civilizacao.Nome, partida.TurnoAtual + 1);
-
             civilizacao.AplicarDecisao(decisao);
             civilizacao.AvancarTurno(regioes);
+
+            // auto-expande quando atinge novos marcos populacionais
+            if (civilizacao.Populacao > 0 && civilizacao.Populacao % 20 == 0)
+            {
+                var todasRegioes = civilizacao.PartidaId.HasValue
+                    ? await regiaoRepository.GetAllByPartidaAsync(civilizacao.PartidaId.Value)
+                    : regioes;
+
+                var posicao = MapaHelper.EncontrarCelulaAdjacente(todasRegioes, civilizacao.Id);
+                if (posicao.HasValue)
+                {
+                    var terreno = MapaHelper.TerremoAleatorio();
+                    var novaRegiao = new Regiao(
+                        $"Território de {civilizacao.Nome}",
+                        terreno,
+                        civilizacao.Id,
+                        posicao.Value.x,
+                        posicao.Value.y);
+                    novaRegiao.MarcarComoControlada();
+                    await regiaoRepository.AddAsync(novaRegiao);
+                    civilizacao.AdicionarTerritorio();
+                    logger.LogInformation("{Civ} auto-expandiu para ({X},{Y})",
+                        civilizacao.Nome, posicao.Value.x, posicao.Value.y);
+                }
+            }
         }
 
         partida.AvancarTurno();

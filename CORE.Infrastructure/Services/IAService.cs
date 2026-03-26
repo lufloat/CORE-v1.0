@@ -25,7 +25,7 @@ public class IAService : IIAService  // ← adiciona isso
             tecnologia = civilizacao.Tecnologia
         };
 
-        var response = await httpClient.PostAsJsonAsync("http://localhost:8000/decidir", estado);
+        var response = await httpClient.PostAsJsonAsync("/decidir", estado);
 
         var result = await response.Content.ReadFromJsonAsync<RespostaIA>();
 

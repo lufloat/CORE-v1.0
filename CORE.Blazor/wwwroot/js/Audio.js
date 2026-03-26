@@ -1,41 +1,45 @@
-﻿window.audioService = {
-    musica: null,
+﻿// Variável global fora do objeto — garante persistência entre chamadas do Blazor Server
+let _musicaAtual = null;
+
+window.audioService = {
 
     tocarMusica(src, volume = 0.3) {
-        if (this.musica) {
-            this.musica.pause();
-            this.musica.currentTime = 0;
+        // Para e destrói qualquer música que esteja tocando
+        if (_musicaAtual) {
+            _musicaAtual.pause();
+            _musicaAtual.currentTime = 0;
+            _musicaAtual = null;
         }
-        this.musica = new Audio(src);
-        this.musica.loop = true;
-        this.musica.volume = volume;
-        this.musica.play().catch(() => {
-            // Autoplay bloqueado pelo browser — aguarda interação do usuário
-        });
+        const audio = new Audio(src);
+        audio.loop = true;
+        audio.volume = Math.max(0, Math.min(1, volume));
+        audio.play().catch(() => { });
+        _musicaAtual = audio;
     },
 
     pararMusica() {
-        if (this.musica) {
-            this.musica.pause();
-            this.musica.currentTime = 0;
+        if (_musicaAtual) {
+            _musicaAtual.pause();
+            _musicaAtual.currentTime = 0;
+            _musicaAtual = null;
         }
     },
 
     pausarMusica() {
-        if (this.musica) {
-            this.musica.pause();
+        if (_musicaAtual) {
+            _musicaAtual.pause();
         }
     },
 
     resumirMusica() {
-        if (this.musica) {
-            this.musica.play().catch(() => { });
+        if (_musicaAtual) {
+            _musicaAtual.play().catch(() => { });
         }
     },
 
     ajustarVolume(volume) {
-        if (this.musica) {
-            this.musica.volume = Math.max(0, Math.min(1, volume));
+        if (_musicaAtual) {
+            _musicaAtual.volume = Math.max(0, Math.min(1, volume));
         }
     },
 

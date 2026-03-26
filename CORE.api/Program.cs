@@ -18,7 +18,8 @@ builder.Services.AddSwaggerGen();
 // DEPOIS ✅
 builder.Services.AddHttpClient<IIAService, IAService>(client =>
 {
-    client.BaseAddress = new Uri("http://localhost:8000/");
+    client.BaseAddress = new Uri(
+        builder.Configuration["PythonAI:BaseUrl"] ?? "http://localhost:8000/");
 });
 
 // DbContext
