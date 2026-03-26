@@ -11,7 +11,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// CORS - necessário se o frontend estiver em outro domínio
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -29,9 +29,13 @@ builder.Services.AddHttpClient<IIAService, IAService>(client =>
         builder.Configuration["PythonAI:BaseUrl"] ?? "http://localhost:8000/");
 });
 
-// DbContext
+// DbContext - lê direto da variável de ambiente do Railway
+var connectionString =
+    Environment.GetEnvironmentVariable("ConnectionStrings__CoreDb")
+    ?? builder.Configuration.GetConnectionString("CoreDb");
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("CoreDb")));
+    options.UseNpgsql(connectionString));
 
 // Repositories
 builder.Services.AddScoped<ICivilizacaoRepository, CivilizacaoRepository>();
@@ -50,7 +54,7 @@ builder.Services.AddScoped<CombaterCivilizacoes>();
 
 var app = builder.Build();
 
-// Migrations automáticas com retry (Railway pode demorar a subir o Postgres)
+// Migrations automáticas com retry
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -74,7 +78,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseSwagger();
 app.UseSwaggerUI();
-app.UseCors(); // antes de UseAuthorization
+app.UseCors();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
