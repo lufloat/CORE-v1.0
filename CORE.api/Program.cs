@@ -7,12 +7,22 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Services to python IA
+// CORS - necessário se o frontend estiver em outro domínio
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+// HttpClient para IA Python
 builder.Services.AddHttpClient<IIAService, IAService>(client =>
 {
     client.BaseAddress = new Uri(
@@ -40,19 +50,31 @@ builder.Services.AddScoped<CombaterCivilizacoes>();
 
 var app = builder.Build();
 
-// ✅ Aplicar migrations automaticamente na inicialização
+// Migrations automáticas com retry (Railway pode demorar a subir o Postgres)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    var retries = 5;
+    while (retries > 0)
+    {
+        try
+        {
+            db.Database.Migrate();
+            break;
+        }
+        catch (Exception ex)
+        {
+            retries--;
+            Console.WriteLine($"Falha ao conectar no banco. Tentativas restantes: {retries}. Erro: {ex.Message}");
+            if (retries == 0) throw;
+            Thread.Sleep(3000);
+        }
+    }
 }
 
-// Configure the HTTP request pipeline.
 app.UseSwagger();
 app.UseSwaggerUI();
-
-app.UseHttpsRedirection();
+app.UseCors(); // antes de UseAuthorization
 app.UseAuthorization();
 app.MapControllers();
-
 app.Run();
