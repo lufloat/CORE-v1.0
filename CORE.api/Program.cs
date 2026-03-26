@@ -25,8 +25,10 @@ builder.Services.AddCors(options =>
 // HttpClient para IA Python
 builder.Services.AddHttpClient<IIAService, IAService>(client =>
 {
-    client.BaseAddress = new Uri(
-        builder.Configuration["PythonAI:BaseUrl"] ?? "http://localhost:8000/");
+    var url = Environment.GetEnvironmentVariable("PythonAI__BaseUrl")
+        ?? builder.Configuration["PythonAI:BaseUrl"]
+        ?? "http://localhost:8000/";
+    client.BaseAddress = new Uri(url);
 });
 
 // DbContext - lê direto da variável de ambiente do Railway
