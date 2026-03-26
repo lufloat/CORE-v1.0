@@ -3,45 +3,46 @@ using CORE.Blazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+var apiUrl = builder.Configuration["API_URL"]
+             ?? "https://localhost:7022/";
+
+var allowedOrigins = builder.Configuration["ALLOWED_ORIGINS"]
+                     ?? "https://localhost:7233";
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddScoped(sp => new HttpClient
 {
-    BaseAddress = new Uri("https://localhost:7022/")
+    BaseAddress = new Uri(apiUrl)
 });
 
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("https://localhost:7233")
+        policy.WithOrigins(allowedOrigins.Split(","))  // ← usa a variável agora
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();  // ← necessário para SignalR
     });
 });
-
 
 builder.Services.AddScoped<ApiService>();
 builder.Services.AddScoped<AudioService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
-
 app.UseAntiforgery();
-
 app.UseCors();
-
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

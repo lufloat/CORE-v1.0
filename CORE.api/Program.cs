@@ -5,7 +5,6 @@ using CORE.Infrastructure.Repositories;
 using CORE.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -14,8 +13,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Services to python IA
-
-// DEPOIS ✅
 builder.Services.AddHttpClient<IIAService, IAService>(client =>
 {
     client.BaseAddress = new Uri(
@@ -29,7 +26,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Repositories
 builder.Services.AddScoped<ICivilizacaoRepository, CivilizacaoRepository>();
 builder.Services.AddScoped<IRegiaoRepository, RegiaoRepository>();
-builder.Services.AddScoped<IPartidaRepository, PartidaRepository>(); 
+builder.Services.AddScoped<IPartidaRepository, PartidaRepository>();
 
 // Use Cases
 builder.Services.AddScoped<IniciarCivilizacao>();
@@ -41,20 +38,21 @@ builder.Services.AddScoped<CriarPartida>();
 builder.Services.AddScoped<AvancarTurnoPartida>();
 builder.Services.AddScoped<CombaterCivilizacoes>();
 
-
-
 var app = builder.Build();
 
+// ✅ Aplicar migrations automaticamente na inicialização
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
 // Configure the HTTP request pipeline.
-
-    app.UseSwagger();
-    app.UseSwaggerUI();
-
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
