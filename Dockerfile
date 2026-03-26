@@ -5,10 +5,10 @@ EXPOSE 8080
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY . .
-RUN dotnet restore "CORE.Api/CORE.Api.csproj"
-RUN dotnet publish "CORE.Api/CORE.Api.csproj" -c Release -o /app/publish
+RUN dotnet restore "CORE.api/CORE.api.csproj"
+RUN dotnet publish "CORE.api/CORE.api.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "CORE.Api.dll"]
+ENTRYPOINT ["dotnet", "CORE.api.dll"]
