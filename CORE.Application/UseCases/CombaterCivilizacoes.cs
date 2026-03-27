@@ -1,6 +1,5 @@
 ﻿using CORE.Application.Interfaces;
 using CORE.Domain.Entities;
-using Microsoft.Extensions.Logging;
 
 namespace CORE.Application.UseCases;
 
@@ -8,78 +7,113 @@ public class CombaterCivilizacoes
 {
     private readonly IPartidaRepository partidaRepository;
     private readonly ICivilizacaoRepository civilizacaoRepository;
-    private readonly ILogger<CombaterCivilizacoes> logger;
+    private readonly IRegiaoRepository regiaoRepository;
 
     public CombaterCivilizacoes(
         IPartidaRepository partidaRepository,
         ICivilizacaoRepository civilizacaoRepository,
-        ILogger<CombaterCivilizacoes> logger)
+        IRegiaoRepository regiaoRepository)
     {
         this.partidaRepository = partidaRepository;
         this.civilizacaoRepository = civilizacaoRepository;
-        this.logger = logger;
+        this.regiaoRepository = regiaoRepository;
     }
 
     public async Task<ResultadoCombate> ExecutarAsync(Guid partidaId, Guid atacanteId, Guid defensorId)
     {
-        if (atacanteId == defensorId)
+        var partida = await partidaRepository.GetByIdComCivilizacoesAsync(partidaId)
+            ?? throw new Exception("Partida não encontrada.");
+
+        var atacante = partida.Civilizacoes.FirstOrDefault(c => c.Id == atacanteId)
+            ?? throw new Exception("Civilização atacante não encontrada.");
+
+        var defensor = partida.Civilizacoes.FirstOrDefault(c => c.Id == defensorId)
+            ?? throw new Exception("Civilização defensora não encontrada.");
+
+        if (atacante.Id == defensor.Id)
             throw new Exception("Uma civilização não pode atacar a si mesma.");
 
-        var partida = await partidaRepository.GetByIdComCivilizacoesAsync(partidaId);
-        if (partida is null)
-            throw new Exception("Partida não encontrada.");
+        // ── Calcula vencedor ──────────────────────────────────────────────
+        var forcaAtacante = atacante.PoderMilitar + new Random().Next(1, 20);
+        var forcaDefensor = defensor.PoderMilitar + new Random().Next(1, 20);
 
-        if (partida.Encerrada)
-            throw new Exception("Esta partida já foi encerrada.");
+        var atacanteVenceu = forcaAtacante >= forcaDefensor;
+        var vencedor = atacanteVenceu ? atacante : defensor;
+        var perdedor = atacanteVenceu ? defensor : atacante;
+        var diferenca = Math.Abs(forcaAtacante - forcaDefensor);
 
-        var atacante = partida.Civilizacoes.FirstOrDefault(c => c.Id == atacanteId);
-        var defensor = partida.Civilizacoes.FirstOrDefault(c => c.Id == defensorId);
-
-        if (atacante is null)
-            throw new Exception("Civilização atacante não encontrada na partida.");
-
-        if (defensor is null)
-            throw new Exception("Civilização defensora não encontrada na partida.");
-
-        logger.LogInformation("Combate iniciado: {Atacante} vs {Defensor}", atacante.Nome, defensor.Nome);
-        logger.LogInformation("Poder Militar — {Atacante}: {PMA} | {Defensor}: {PMD}",
-            atacante.Nome, atacante.PoderMilitar, defensor.Nome, defensor.PoderMilitar);
-
-        var diferenca = Math.Abs(atacante.PoderMilitar - defensor.PoderMilitar);
-        Civilizacao vencedor;
-        Civilizacao perdedor;
-
-        if (atacante.PoderMilitar >= defensor.PoderMilitar)
+        // ── Recursos roubados ─────────────────────────────────────────────
+        var recursosRoubados = 0;
+        if (atacanteVenceu && perdedor.Comida > 0)
         {
-            vencedor = atacante;
-            perdedor = defensor;
-        }
-        else
-        {
-            vencedor = defensor;
-            perdedor = atacante;
+            recursosRoubados = Math.Min(perdedor.Comida, Math.Max(1, diferenca / 2));
+            perdedor.RemoverComida(recursosRoubados);
+            vencedor.AdicionarComida(recursosRoubados);
         }
 
-        // aplica consequências do combate
-        var recursosRoubados = Math.Min(15, perdedor.Comida);
-        var territoriosRoubados = perdedor.Territorios > 1 ? 1 : 0;
+        // ── Transferência de territórios ──────────────────────────────────
+        // ✅ CORRIGIDO: antes só atualizava o contador int Territorios,
+        //    agora busca as entidades Regiao do banco e transfere de verdade
+        var territoriosRoubados = 0;
 
-        vencedor.AplicarVitoria(recursosRoubados, territoriosRoubados);
-        perdedor.AplicarDerrota(recursosRoubados, territoriosRoubados);
+        if (atacanteVenceu && perdedor.Territorios > 1)
+        {
+            // Quantas regiões transferir (pelo menos 1 se o perdedor tiver mais de 1)
+            var qtd = Math.Max(1, diferenca / 10);
+            qtd = Math.Min(qtd, perdedor.Territorios - 1); // deixa ao menos 1 para o perdedor
 
-        await civilizacaoRepository.UpdateAsync(atacante);
-        await civilizacaoRepository.UpdateAsync(defensor);
+            var regioesDoPerdedor = await regiaoRepository.GetByCivilizacaoIdAsync(perdedor.Id);
 
-        var descricao = $"{vencedor.Nome} venceu o combate contra {perdedor.Nome} " +
-                        $"e roubou {recursosRoubados} de comida e {territoriosRoubados} território(s)!";
+            // Pega as primeiras N regiões para transferir
+            var regioesSelecionadas = regioesDoPerdedor.Take(qtd).ToList();
 
-        logger.LogInformation(descricao);
+            foreach (var regiao in regioesSelecionadas)
+            {
+                // Transfere a região no domínio
+                regiao.TransferirPara(vencedor.Id);
 
-        if (perdedor.PoderMilitar <= 0)
-            logger.LogWarning("{Perdedor} ficou sem poder militar após o combate!", perdedor.Nome);
+                // Persiste a mudança no banco
+                await regiaoRepository.UpdateAsync(regiao);
+            }
+
+            territoriosRoubados = regioesSelecionadas.Count;
+
+            // Atualiza os contadores inteiros nas civilizações
+            perdedor.RemoverTerritorios(territoriosRoubados);
+            vencedor.AdicionarTerritorios(territoriosRoubados);
+        }
+
+        // Penalidade de moral para o perdedor
+        perdedor.ReduzirMoral(10);
+
+        // Persiste as civilizações atualizadas
+        await civilizacaoRepository.UpdateAsync(vencedor);
+        await civilizacaoRepository.UpdateAsync(perdedor);
+
+        var descricao = atacanteVenceu
+            ? $"{atacante.Nome} venceu o combate contra {defensor.Nome} e roubou {recursosRoubados} de comida e {territoriosRoubados} território(s)!"
+            : $"{defensor.Nome} repeliu o ataque de {atacante.Nome}!";
 
         return new ResultadoCombate(
-            atacante, defensor, vencedor, perdedor,
-            diferenca, recursosRoubados, territoriosRoubados, descricao);
+            Descricao: descricao,
+            Vencedor: vencedor,
+            Perdedor: perdedor,
+            Atacante: atacante,
+            Defensor: defensor,
+            DiferencaPoderMilitar: diferenca,
+            RecursosRoubados: recursosRoubados,
+            TerritoriosRoubados: territoriosRoubados
+        );
     }
 }
+
+public record ResultadoCombate(
+    string Descricao,
+    CORE.Domain.Entities.Civilizacao Vencedor,
+    CORE.Domain.Entities.Civilizacao Perdedor,
+    CORE.Domain.Entities.Civilizacao Atacante,
+    CORE.Domain.Entities.Civilizacao Defensor,
+    int DiferencaPoderMilitar,
+    int RecursosRoubados,
+    int TerritoriosRoubados
+);

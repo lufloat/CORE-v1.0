@@ -14,24 +14,17 @@ public class RegiaoRepository : IRegiaoRepository
         this.context = context;
     }
 
-
-    public async Task<IEnumerable<Regiao>> GetAllByPartidaAsync(Guid partidaId)
-    {
-        return await context.Regioes
-            .Where(r => context.Civilizacoes
-                .Where(c => c.PartidaId == partidaId)
-                .Select(c => c.Id)
-                .Contains(r.CivilizacaoId))
+    // Regiões onde Controlada = true (mantido para compatibilidade)
+    public async Task<List<Regiao>> GetControladasAsync(Guid civilizacaoId)
+        => await context.Regioes
+            .Where(r => r.CivilizacaoId == civilizacaoId && r.Controlada)
             .ToListAsync();
-    }
 
-
-    public async Task<IEnumerable<Regiao>> GetControladasAsync(Guid civilizacaoId)
-    {
-        return await context.Regioes
-            .Where(r => r.Controlada && r.CivilizacaoId == civilizacaoId)
+    // ✅ NOVO: todas as regiões da civilização, controladas ou não
+    public async Task<List<Regiao>> GetByCivilizacaoIdAsync(Guid civilizacaoId)
+        => await context.Regioes
+            .Where(r => r.CivilizacaoId == civilizacaoId)
             .ToListAsync();
-    }
 
     public async Task AddAsync(Regiao regiao)
     {
@@ -39,9 +32,23 @@ public class RegiaoRepository : IRegiaoRepository
         await context.SaveChangesAsync();
     }
 
+    // ✅ ESSENCIAL: persiste a transferência de CivilizacaoId no banco
     public async Task UpdateAsync(Regiao regiao)
     {
         context.Regioes.Update(regiao);
         await context.SaveChangesAsync();
+    }
+
+    // ✅ CORRIGIDO: usa join em vez de navegação .Civilizacao que não existe na entidade
+    public async Task<List<Regiao>> GetByPartidaAsync(Guid partidaId)
+    {
+        var civIds = await context.Civilizacoes
+            .Where(c => c.PartidaId == partidaId)
+            .Select(c => c.Id)
+            .ToListAsync();
+
+        return await context.Regioes
+            .Where(r => civIds.Contains(r.CivilizacaoId))
+            .ToListAsync();
     }
 }

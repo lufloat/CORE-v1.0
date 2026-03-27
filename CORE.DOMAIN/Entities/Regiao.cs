@@ -17,14 +17,14 @@ namespace CORE.Domain.Entities
         public int X { get; private set; }
         public int Y { get; private set; }
 
-        public Regiao(string nome, TipoTerreno terreno, Guid civilizacaoId, int x=0, int y=0)
+        public Regiao(string nome, TipoTerreno terreno, Guid civilizacaoId, int x = 0, int y = 0)
         {
             Id = Guid.NewGuid();
             Nome = nome;
             Terreno = terreno;
-            Controlada = false;
+            Controlada = true; // ✅ CORRIGIDO: era false — região criada já pertence à civ
             NivelDesenvolvimento = 0;
-            CivilizacaoId = civilizacaoId; // ✅ agora o parâmetro existe
+            CivilizacaoId = civilizacaoId;
             X = x;
             Y = y;
             DefinirProducaoBase();
@@ -50,5 +50,12 @@ namespace CORE.Domain.Entities
         public void Conquistar() => Controlada = true;
         public void MarcarComoControlada() => Controlada = true;
         public void Controlar() => Controlada = true;
+
+        // ✅ NOVO: transfere a região para outra civilização após combate
+        public void TransferirPara(Guid novaCivilizacaoId)
+        {
+            CivilizacaoId = novaCivilizacaoId;
+            Controlada = true;
+        }
     }
 }

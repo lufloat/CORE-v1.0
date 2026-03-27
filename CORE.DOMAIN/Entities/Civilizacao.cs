@@ -7,51 +7,33 @@ namespace CORE.Domain.Entities;
 public class Civilizacao
 {
     public Guid Id { get; private set; }
-
     public Guid? PartidaId { get; private set; }
-
     public string Nome { get; private set; }
-
     public int Turno { get; private set; }
-
     public int Populacao { get; private set; }
-
     public int Comida { get; private set; }
-
     public int Madeira { get; private set; }
-
     public int Pedra { get; private set; }
-
     public int Moral { get; private set; }
-
     public int Tecnologia { get; private set; }
-
     public int PoderMilitar { get; private set; }
-
     public int Territorios { get; private set; }
-
     public EraCivilizacional Era { get; private set; }
-
     public TipoEvento UltimoEvento { get; private set; }
-
     public List<EventoHistorico> HistoricoEventos { get; private set; } = new();
 
     public Civilizacao(string nome)
     {
         Id = Guid.NewGuid();
         Nome = nome;
-
         Turno = 0;
         Populacao = 10;
-
         Comida = 20;
         Madeira = 10;
         Pedra = 10;
-
         Moral = 50;
         Tecnologia = 0;
         PoderMilitar = 5;
-
         Territorios = 1;
         Era = EraCivilizacional.Tribal;
         UltimoEvento = TipoEvento.Nenhum;
@@ -60,22 +42,18 @@ public class Civilizacao
     public void AvancarTurno(IEnumerable<Regiao> regioesControladas)
     {
         Turno++;
-
         ProduzirRecursos(regioesControladas);
         ConsumirComida();
         AtualizarEra();
         AjustarLimites();
-
-        AplicarEvento(); // 🔥 evento com heurística
+        AplicarEvento();
     }
 
-    // 🔥 Heurística simples (baseada no estado da civilização)
     public void AplicarEvento()
     {
         var random = new Random();
         var valor = random.Next(0, 100);
 
-        // crise de comida → maior chance de seca
         if (Comida < 15)
         {
             if (valor < 60)
@@ -87,7 +65,6 @@ public class Civilizacao
             }
         }
 
-        // moral baixa → maior chance de rebelião
         if (Moral < 30)
         {
             if (valor < 50)
@@ -99,7 +76,6 @@ public class Civilizacao
             }
         }
 
-        // tecnologia alta → chance de avanço
         if (Tecnologia > 20)
         {
             if (valor < 40)
@@ -110,7 +86,6 @@ public class Civilizacao
             }
         }
 
-        // evento neutro/positivo geral
         if (valor < 25)
         {
             Comida += 15;
@@ -119,16 +94,18 @@ public class Civilizacao
             return;
         }
 
-        // nada aconteceu
         UltimoEvento = TipoEvento.Nenhum;
         HistoricoEventos.Add(new EventoHistorico(Turno, UltimoEvento));
     }
 
-    public void AdicionarTerritorio()
-    {
+    public void AdicionarTerritorio() => Territorios++;
 
-        Territorios++;
-    }
+    // ✅ Métodos novos usados pelo CombaterCivilizacoes
+    public void AdicionarComida(int quantidade) => Comida = Math.Max(0, Comida + quantidade);
+    public void RemoverComida(int quantidade) => Comida = Math.Max(0, Comida - quantidade);
+    public void AdicionarTerritorios(int quantidade) => Territorios = Math.Max(1, Territorios + quantidade);
+    public void RemoverTerritorios(int quantidade) => Territorios = Math.Max(1, Territorios - quantidade);
+    public void ReduzirMoral(int quantidade) => Moral = Math.Max(0, Math.Min(100, Moral - quantidade));
 
     private void ProduzirRecursos(IEnumerable<Regiao> regioesControladas)
     {
@@ -156,61 +133,45 @@ public class Civilizacao
             Moral += 1;
         }
     }
+
     public void AplicarDecisao(TipoDecisao decisao)
     {
         switch (decisao)
         {
             case TipoDecisao.InvestirTecnologia:
-                if (Madeira < 10)
-                    throw new Exception("Madeira insuficiente.");
-
+                if (Madeira < 10) throw new Exception("Madeira insuficiente.");
                 Madeira -= 10;
                 Tecnologia += 5;
                 break;
-
             case TipoDecisao.ProduzirComida:
                 Madeira -= 5;
                 Comida += 10;
                 break;
-
             case TipoDecisao.TreinarExercito:
                 Comida -= 10;
                 PoderMilitar += 5;
                 break;
-
             case TipoDecisao.MelhorarMoral:
                 Comida -= 5;
                 Moral += 10;
                 break;
         }
-
         AjustarLimites();
     }
+
     private void AtualizarEra()
     {
         if (Populacao >= 300 && Tecnologia >= 150 && Territorios >= 8)
-        {
-            Era = EraCivilizacional.Imperio;
-            return;
-        }
+        { Era = EraCivilizacional.Imperio; return; }
 
         if (Populacao >= 180 && Tecnologia >= 90 && Territorios >= 5)
-        {
-            Era = EraCivilizacional.Reino;
-            return;
-        }
+        { Era = EraCivilizacional.Reino; return; }
 
         if (Populacao >= 100 && Tecnologia >= 50 && Territorios >= 3)
-        {
-            Era = EraCivilizacional.Cidade;
-            return;
-        }
+        { Era = EraCivilizacional.Cidade; return; }
 
         if (Populacao >= 40 && Tecnologia >= 15 && Territorios >= 2)
-        {
-            Era = EraCivilizacional.Aldeia;
-            return;
-        }
+        { Era = EraCivilizacional.Aldeia; return; }
 
         Era = EraCivilizacional.Tribal;
     }
@@ -221,7 +182,6 @@ public class Civilizacao
         Territorios += territoriosRoubados;
         Moral += 15;
         PoderMilitar += 3;
-
         AjustarLimites();
     }
 
@@ -231,12 +191,8 @@ public class Civilizacao
         Territorios -= territoriosRoubados;
         Moral -= 20;
         PoderMilitar -= 5;
-
         AjustarLimites();
     }
-
-
-
 
     private void AjustarLimites()
     {

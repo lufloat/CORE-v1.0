@@ -28,7 +28,6 @@
                         <span class="turno-label">ANO</span>
                         <span class="turno-num">@(partida.TurnoAtual * 10)</span>
                     </div>
-                    <!-- Controle de música na tela de jogo -->
                     <button class="btn-audio" @onclick="ToggleMusica" title="@(musicaAtiva ? "Silenciar" : "Ligar música")">
                         @(musicaAtiva ? "🔊" : "🔇")
                     </button>
@@ -186,9 +185,7 @@
     }
 
     @@keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
+        to { transform: rotate(360deg); }
     }
 
     .loading-text {
@@ -253,7 +250,6 @@
         line-height: 1;
     }
 
-    /* Botão de áudio no header */
     .btn-audio {
         background: rgba(201, 168, 76, 0.08);
         border: 1px solid rgba(201, 168, 76, 0.25);
@@ -367,9 +363,7 @@
         background: rgba(200, 60, 60, 0.12);
     }
 
-    .r-icon {
-        font-size: 0.9rem;
-    }
+    .r-icon { font-size: 0.9rem; }
 
     .r-val {
         font-family: 'Crimson Text', serif;
@@ -378,9 +372,7 @@
         font-weight: 600;
     }
 
-    .r-critico .r-val {
-        color: #e07070;
-    }
+    .r-critico .r-val { color: #e07070; }
 
     .evento-badge {
         font-family: 'Crimson Text', serif;
@@ -393,10 +385,7 @@
         margin-bottom: 0.8rem;
     }
 
-    .civ-actions {
-        display: flex;
-        gap: 0.5rem;
-    }
+    .civ-actions { display: flex; gap: 0.5rem; }
 
     .btn-atacar, .btn-alvo, .btn-cancelar {
         flex: 1;
@@ -415,20 +404,14 @@
         border-color: rgba(201, 168, 76, 0.3);
         color: #c9a84c;
     }
-
-        .btn-atacar:hover {
-            background: rgba(201, 168, 76, 0.2);
-        }
+        .btn-atacar:hover { background: rgba(201, 168, 76, 0.2); }
 
     .btn-alvo {
         background: rgba(200, 60, 60, 0.15);
         border-color: rgba(200, 60, 60, 0.4);
         color: #e07070;
     }
-
-        .btn-alvo:hover {
-            background: rgba(200, 60, 60, 0.25);
-        }
+        .btn-alvo:hover { background: rgba(200, 60, 60, 0.25); }
 
     .btn-cancelar {
         background: rgba(80, 80, 80, 0.2);
@@ -519,12 +502,6 @@
         regioes = await ApiService.GetRegioesByPartidaAsync(PartidaId);
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        // Não inicia música automaticamente — aguarda o usuário clicar no botão
-        // para evitar bloqueio de autoplay dos browsers
-    }
-
     private async Task ToggleMusica()
     {
         if (musicaAtiva)
@@ -544,17 +521,26 @@
         erro = string.Empty;
         combate = null;
         carregando = true;
+        StateHasChanged(); // ← força o "Processando..." aparecer imediatamente
 
-        // Efeito sonoro de turno
         await Audio.TocarEfeito("/audio/turno.mp3", 0.5);
 
-        partida = await ApiService.AvancarTurnoAsync(PartidaId);
-        regioes = await ApiService.GetRegioesByPartidaAsync(PartidaId);
+        var novaPartida = await ApiService.AvancarTurnoAsync(PartidaId);
+        var novasRegioes = await ApiService.GetRegioesByPartidaAsync(PartidaId);
 
-        if (partida is null)
+        if (novaPartida is null)
+        {
             erro = "Erro ao avançar turno. Verifique se a API está rodando.";
+        }
+        else
+        {
+            // Substitui a referência inteira para garantir que o Blazor detecte a mudança
+            partida = novaPartida;
+            regioes = novasRegioes; // nova lista = novo objeto = MapaGrid detecta mudança
+        }
 
         carregando = false;
+        StateHasChanged(); // ← força re-render após todos os dados chegarem
     }
 
     private void SelecionarAtacante(CivilizacaoModel civ)
@@ -575,6 +561,7 @@
         if (atacanteSelecionado is null) return;
         erro = string.Empty;
         carregando = true;
+        StateHasChanged();
 
         combate = await ApiService.CombaterAsync(PartidaId, atacanteSelecionado.Id, defensor.Id);
 
@@ -585,18 +572,20 @@
         }
         else if (combate.Vencedor == atacanteSelecionado.Nome)
         {
-            // Atacante venceu
             await Audio.TocarEfeito("/audio/vitoria.mp3", 0.7);
         }
         else
         {
-            // Atacante perdeu
             await Audio.TocarEfeito("/audio/combate.mp3", 0.6);
         }
 
-        partida = await ApiService.GetPartidaAsync(PartidaId);
-        regioes = await ApiService.GetRegioesByPartidaAsync(PartidaId);
+        var novaPartida = await ApiService.GetPartidaAsync(PartidaId);
+        var novasRegioes = await ApiService.GetRegioesByPartidaAsync(PartidaId);
+
+        partida = novaPartida;
+        regioes = novasRegioes;
         atacanteSelecionado = null;
         carregando = false;
+        StateHasChanged();
     }
 }

@@ -28,7 +28,9 @@ public class RegiaoController : ControllerBase
 
         foreach (var civ in civilizacoes)
         {
-            var regioesDaCiv = await regiaoRepository.GetControladasAsync(civ.Id);
+            // ✅ CORRIGIDO: era GetControladasAsync — só retornava Controlada=true
+            // Agora pega TODAS as regiões da civilização para o mapa ficar completo
+            var regioesDaCiv = await regiaoRepository.GetByCivilizacaoIdAsync(civ.Id);
             foreach (var regiao in regioesDaCiv)
             {
                 regioes.Add(new RegiaoResponse(

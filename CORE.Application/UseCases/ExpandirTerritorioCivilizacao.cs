@@ -29,7 +29,7 @@ public class ExpandirTerritorioCivilizacao
 
         // busca todas as regiões da partida pra não sobrepor
         var todasRegioes = civilizacao.PartidaId.HasValue
-            ? await regiaoRepository.GetAllByPartidaAsync(civilizacao.PartidaId.Value)
+           ? await regiaoRepository.GetByPartidaAsync(civilizacao.PartidaId.Value)
             : await regiaoRepository.GetControladasAsync(civilizacaoId);
 
         var posicao = MapaHelper.EncontrarCelulaAdjacente(todasRegioes, civilizacaoId);

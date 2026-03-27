@@ -53,7 +53,7 @@ public class AvancarTurnoPartida
             if (civilizacao.Populacao > 0 && civilizacao.Populacao % 20 == 0)
             {
                 var todasRegioes = civilizacao.PartidaId.HasValue
-                    ? await regiaoRepository.GetAllByPartidaAsync(civilizacao.PartidaId.Value)
+                    ? await regiaoRepository.GetByPartidaAsync(civilizacao.PartidaId.Value)
                     : regioes;
 
                 var posicao = MapaHelper.EncontrarCelulaAdjacente(todasRegioes, civilizacao.Id);

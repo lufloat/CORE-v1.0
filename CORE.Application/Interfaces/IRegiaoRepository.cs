@@ -4,8 +4,12 @@ namespace CORE.Application.Interfaces;
 
 public interface IRegiaoRepository
 {
-    Task<IEnumerable<Regiao>> GetControladasAsync(Guid civilizacaoId);
+    Task<List<Regiao>> GetControladasAsync(Guid civilizacaoId);
+
+    // ✅ NOVO: busca todas as regiões da civ (controladas ou não)
+    Task<List<Regiao>> GetByCivilizacaoIdAsync(Guid civilizacaoId);
+
     Task AddAsync(Regiao regiao);
     Task UpdateAsync(Regiao regiao);
-    Task<IEnumerable<Regiao>> GetAllByPartidaAsync(Guid partidaId);
+    Task<List<Regiao>> GetByPartidaAsync(Guid partidaId);
 }
