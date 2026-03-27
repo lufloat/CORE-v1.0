@@ -13,7 +13,7 @@
     </div>
 
     <div class="mapa-ocean">
-        <div class="mapa-grid">
+        <div class="mapa-grid" style="--cols: @TamanhoX; --rows: @TamanhoY;">
             @for (int y = 0; y < TamanhoY; y++)
             {
                 @for (int x = 0; x < TamanhoX; x++)
@@ -29,21 +29,17 @@
                          style="grid-column: @(cx + 1); grid-row: @(cy + 1);"
                          title="@tooltip">
 
-                        <!-- Textura SVG de terreno -->
                         <svg class="cel-svg" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
                             @if (terreno == "Planicie")
                             {
-                                <!-- Linhas de campo -->
                                 <line x1="8" y1="30" x2="18" y2="28" stroke="#5a9a3a" stroke-width="1.2" stroke-linecap="round" opacity="0.6" />
                                 <line x1="14" y1="36" x2="26" y2="34" stroke="#5a9a3a" stroke-width="1.2" stroke-linecap="round" opacity="0.5" />
                                 <line x1="24" y1="26" x2="38" y2="24" stroke="#5a9a3a" stroke-width="1.2" stroke-linecap="round" opacity="0.4" />
-                                <!-- Colinas suaves -->
                                 <ellipse cx="12" cy="28" rx="8" ry="4" fill="#4a8a30" opacity="0.25" />
                                 <ellipse cx="34" cy="32" rx="7" ry="3" fill="#4a8a30" opacity="0.2" />
                             }
                             else if (terreno == "Floresta")
                             {
-                                <!-- Árvores estilizadas -->
                                 <polygon points="10,32 14,18 18,32" fill="#2a6030" opacity="0.8" />
                                 <polygon points="22,34 27,16 32,34" fill="#1e5028" opacity="0.9" />
                                 <polygon points="32,32 36,20 40,32" fill="#2a6030" opacity="0.7" />
@@ -51,35 +47,28 @@
                             }
                             else if (terreno == "Montanha")
                             {
-                                <!-- Picos -->
                                 <polygon points="10,38 20,14 30,38" fill="#7a7a8a" opacity="0.8" />
                                 <polygon points="22,38 34,18 46,38" fill="#8a8a9a" opacity="0.7" />
-                                <!-- Neve no topo -->
                                 <polygon points="17,20 20,14 23,20" fill="#e8e8f0" opacity="0.9" />
                                 <polygon points="30,24 34,18 38,24" fill="#e8e8f0" opacity="0.8" />
                             }
                             else if (terreno == "Rio")
                             {
-                                <!-- Curva do rio -->
                                 <path d="M4,4 Q16,12 8,24 Q0,36 16,44" stroke="#4a9aca" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.7" />
                                 <path d="M4,4 Q16,12 8,24 Q0,36 16,44" stroke="#6abaea" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5" />
-                                <!-- Ondas -->
                                 <path d="M20,16 Q26,13 32,16 Q38,19 44,16" stroke="#4a9aca" stroke-width="1.5" fill="none" opacity="0.4" />
                                 <path d="M20,24 Q26,21 32,24 Q38,27 44,24" stroke="#4a9aca" stroke-width="1.5" fill="none" opacity="0.3" />
                             }
                             else if (terreno == "Deserto")
                             {
-                                <!-- Dunas -->
                                 <ellipse cx="14" cy="34" rx="12" ry="6" fill="#c0942a" opacity="0.4" />
                                 <ellipse cx="34" cy="30" rx="11" ry="5" fill="#b08020" opacity="0.35" />
                                 <ellipse cx="24" cy="38" rx="14" ry="5" fill="#c0942a" opacity="0.3" />
-                                <!-- Linhas de areia -->
                                 <path d="M6,28 Q24,22 42,28" stroke="#d4aa40" stroke-width="1" fill="none" opacity="0.4" />
                                 <path d="M4,34 Q24,28 44,34" stroke="#d4aa40" stroke-width="1" fill="none" opacity="0.3" />
                             }
                         </svg>
 
-                        <!-- Bandeira da civilização -->
                         @if (!string.IsNullOrEmpty(civNome))
                         {
                             <div class="cel-civ-flag">
@@ -87,7 +76,6 @@
                             </div>
                         }
 
-                        <!-- Overlay de hover com nome completo -->
                         <div class="cel-tooltip-inner">
                             @if (regiao is not null)
                             {
@@ -113,9 +101,11 @@
         border: 1px solid rgba(201, 168, 76, 0.35);
         border-radius: 6px;
         overflow: hidden;
-        display: inline-flex;
+        display: flex;
         flex-direction: column;
         box-shadow: 0 8px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(201,168,76,0.1);
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .mapa-header {
@@ -125,7 +115,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 1rem;
+        gap: 0.5rem;
         flex-wrap: wrap;
     }
 
@@ -139,7 +129,7 @@
 
     .mapa-legenda {
         display: flex;
-        gap: 0.8rem;
+        gap: 0.5rem;
         flex-wrap: wrap;
     }
 
@@ -149,24 +139,25 @@
         gap: 0.3rem;
         font-family: 'Crimson Text', serif;
         color: #8a7855;
-        font-size: 0.75rem;
+        font-size: 0.72rem;
     }
 
     .leg-dot {
-        width: 8px;
-        height: 8px;
+        width: 7px;
+        height: 7px;
         border-radius: 50%;
         display: inline-block;
+        flex-shrink: 0;
     }
 
-    /* Oceano ao redor do mapa */
     .mapa-ocean {
         padding: 10px;
         background: radial-gradient(ellipse at 10% 10%, rgba(20, 50, 90, 0.3) 0%, transparent 60%), radial-gradient(ellipse at 90% 90%, rgba(10, 30, 70, 0.25) 0%, transparent 60%), linear-gradient(135deg, #060e1a 0%, #080c18 50%, #060e1a 100%);
         position: relative;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
-        /* Textura de oceano com grid de linhas finas */
         .mapa-ocean::before {
             content: '';
             position: absolute;
@@ -178,22 +169,23 @@
 
     .mapa-grid {
         display: grid;
-        grid-template-columns: repeat(10, 48px);
-        grid-template-rows: repeat(10, 48px);
+        grid-template-columns: repeat(var(--cols, 10), var(--cel, 48px));
+        grid-template-rows: repeat(var(--rows, 10), var(--cel, 48px));
         gap: 2px;
         position: relative;
         z-index: 1;
+        /* célula responsiva: tenta caber na tela, mínimo 28px, máximo 48px */
+        --cel: clamp(28px, calc((100vw - 44px) / var(--cols, 10)), 48px);
     }
 
-    /* ── Células base ── */
     .celula {
-        width: 48px;
-        height: 48px;
+        width: var(--cel, 48px);
+        height: var(--cel, 48px);
         border-radius: 3px;
         position: relative;
         cursor: default;
         overflow: visible;
-        transition: transform 0.15s ease, z-index 0s;
+        transition: transform 0.15s ease;
         border: 1px solid rgba(0,0,0,0.5);
     }
 
@@ -206,11 +198,10 @@
 
             .celula:hover .cel-tooltip-inner {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateX(-50%) translateY(0);
                 pointer-events: none;
             }
 
-    /* ── Backgrounds por terreno ── */
     .terreno-planicie-cel {
         background: linear-gradient(135deg, #2d5a1b 0%, #3d7a25 40%, #2d6018 100%);
         border-color: #3a6a22;
@@ -241,7 +232,6 @@
         border-color: #1a1e30;
     }
 
-    /* ── SVG de textura dentro da célula ── */
     .cel-svg {
         position: absolute;
         inset: 0;
@@ -250,7 +240,6 @@
         pointer-events: none;
     }
 
-    /* ── Bandeirinha de civilização ── */
     .cel-civ-flag {
         position: absolute;
         bottom: 2px;
@@ -259,22 +248,21 @@
         background: rgba(0,0,0,0.72);
         border: 1px solid rgba(201, 168, 76, 0.45);
         border-radius: 2px;
-        padding: 1px 4px;
+        padding: 1px 3px;
         pointer-events: none;
         backdrop-filter: blur(2px);
     }
 
     .cel-civ-nome {
         font-family: 'Cinzel', serif;
-        font-size: 0.42rem;
+        font-size: 0.38rem;
         font-weight: 700;
         color: #e8c86a;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.04em;
         text-shadow: 0 1px 3px rgba(0,0,0,0.9);
         white-space: nowrap;
     }
 
-    /* ── Tooltip interno ao hover ── */
     .cel-tooltip-inner {
         position: absolute;
         bottom: calc(100% + 6px);
@@ -309,6 +297,14 @@
         color: #8a7855;
         font-size: 0.7rem;
         font-style: italic;
+    }
+
+    /* mobile: legenda em coluna se não couber */
+    @@media (max-width: 400px) {
+        .mapa-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
     }
 </style>
 
