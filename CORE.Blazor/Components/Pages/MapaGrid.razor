@@ -3,128 +3,312 @@
 <div class="mapa-wrapper">
     <div class="mapa-header">
         <span class="mapa-title">🗺 Mapa do Mundo</span>
+        <span class="mapa-legenda">
+            <span class="leg-item"><span class="leg-dot" style="background:#4a7c3f"></span>Planície</span>
+            <span class="leg-item"><span class="leg-dot" style="background:#1e4d2b"></span>Floresta</span>
+            <span class="leg-item"><span class="leg-dot" style="background:#6b6b7a"></span>Montanha</span>
+            <span class="leg-item"><span class="leg-dot" style="background:#2a6496"></span>Rio</span>
+            <span class="leg-item"><span class="leg-dot" style="background:#a07840"></span>Deserto</span>
+        </span>
     </div>
-    <div class="mapa-grid">
-        @for (int y = 0; y < TamanhoY; y++)
-        {
-            <div class="mapa-row">
+
+    <div class="mapa-ocean">
+        <div class="mapa-grid">
+            @for (int y = 0; y < TamanhoY; y++)
+            {
                 @for (int x = 0; x < TamanhoX; x++)
                 {
-                    var regiao = ObterRegiao(x, y);
-                    var classe = ObterClasseTerreno(regiao);
-                    <div class="celula @classe" title="@ObterTooltip(regiao, x, y)">
-                        <span class="celula-icone">@ObterIcone(regiao)</span>
-                        @if (regiao is not null)
+                    var cx = x;
+                    var cy = y;
+                    var regiao = ObterRegiao(cx, cy);
+                    var terreno = regiao?.Terreno ?? "";
+                    var civNome = regiao?.CivilizacaoNome ?? "";
+                    var tooltip = ObterTooltip(regiao, cx, cy);
+
+                    <div class="celula terreno-@(terreno.ToLower())-cel"
+                         style="grid-column: @(cx + 1); grid-row: @(cy + 1);"
+                         title="@tooltip">
+
+                        <!-- Textura SVG de terreno -->
+                        <svg class="cel-svg" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                            @if (terreno == "Planicie")
+                            {
+                                <!-- Linhas de campo -->
+                                <line x1="8" y1="30" x2="18" y2="28" stroke="#5a9a3a" stroke-width="1.2" stroke-linecap="round" opacity="0.6" />
+                                <line x1="14" y1="36" x2="26" y2="34" stroke="#5a9a3a" stroke-width="1.2" stroke-linecap="round" opacity="0.5" />
+                                <line x1="24" y1="26" x2="38" y2="24" stroke="#5a9a3a" stroke-width="1.2" stroke-linecap="round" opacity="0.4" />
+                                <!-- Colinas suaves -->
+                                <ellipse cx="12" cy="28" rx="8" ry="4" fill="#4a8a30" opacity="0.25" />
+                                <ellipse cx="34" cy="32" rx="7" ry="3" fill="#4a8a30" opacity="0.2" />
+                            }
+                            else if (terreno == "Floresta")
+                            {
+                                <!-- Árvores estilizadas -->
+                                <polygon points="10,32 14,18 18,32" fill="#2a6030" opacity="0.8" />
+                                <polygon points="22,34 27,16 32,34" fill="#1e5028" opacity="0.9" />
+                                <polygon points="32,32 36,20 40,32" fill="#2a6030" opacity="0.7" />
+                                <polygon points="8,36 12,26 16,36" fill="#1e5028" opacity="0.5" />
+                            }
+                            else if (terreno == "Montanha")
+                            {
+                                <!-- Picos -->
+                                <polygon points="10,38 20,14 30,38" fill="#7a7a8a" opacity="0.8" />
+                                <polygon points="22,38 34,18 46,38" fill="#8a8a9a" opacity="0.7" />
+                                <!-- Neve no topo -->
+                                <polygon points="17,20 20,14 23,20" fill="#e8e8f0" opacity="0.9" />
+                                <polygon points="30,24 34,18 38,24" fill="#e8e8f0" opacity="0.8" />
+                            }
+                            else if (terreno == "Rio")
+                            {
+                                <!-- Curva do rio -->
+                                <path d="M4,4 Q16,12 8,24 Q0,36 16,44" stroke="#4a9aca" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.7" />
+                                <path d="M4,4 Q16,12 8,24 Q0,36 16,44" stroke="#6abaea" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5" />
+                                <!-- Ondas -->
+                                <path d="M20,16 Q26,13 32,16 Q38,19 44,16" stroke="#4a9aca" stroke-width="1.5" fill="none" opacity="0.4" />
+                                <path d="M20,24 Q26,21 32,24 Q38,27 44,24" stroke="#4a9aca" stroke-width="1.5" fill="none" opacity="0.3" />
+                            }
+                            else if (terreno == "Deserto")
+                            {
+                                <!-- Dunas -->
+                                <ellipse cx="14" cy="34" rx="12" ry="6" fill="#c0942a" opacity="0.4" />
+                                <ellipse cx="34" cy="30" rx="11" ry="5" fill="#b08020" opacity="0.35" />
+                                <ellipse cx="24" cy="38" rx="14" ry="5" fill="#c0942a" opacity="0.3" />
+                                <!-- Linhas de areia -->
+                                <path d="M6,28 Q24,22 42,28" stroke="#d4aa40" stroke-width="1" fill="none" opacity="0.4" />
+                                <path d="M4,34 Q24,28 44,34" stroke="#d4aa40" stroke-width="1" fill="none" opacity="0.3" />
+                            }
+                        </svg>
+
+                        <!-- Bandeira da civilização -->
+                        @if (!string.IsNullOrEmpty(civNome))
                         {
-                            <span class="celula-civ">@regiao.CivilizacaoNome[..Math.Min(3, regiao.CivilizacaoNome.Length)]</span>
+                            <div class="cel-civ-flag">
+                                <span class="cel-civ-nome">@civNome[..Math.Min(3, civNome.Length)]</span>
+                            </div>
                         }
+
+                        <!-- Overlay de hover com nome completo -->
+                        <div class="cel-tooltip-inner">
+                            @if (regiao is not null)
+                            {
+                                <span class="tip-nome">@regiao.Nome</span>
+                                <span class="tip-civ">@regiao.CivilizacaoNome</span>
+                            }
+                            else
+                            {
+                                <span class="tip-nome">(@cx, @cy)</span>
+                                <span class="tip-civ">Desocupado</span>
+                            }
+                        </div>
                     </div>
                 }
-            </div>
-        }
+            }
+        </div>
     </div>
 </div>
 
 <style>
     .mapa-wrapper {
-        background: rgba(8, 6, 4, 0.95);
-        border: 1px solid rgba(201, 168, 76, 0.3);
-        border-radius: 4px;
+        background: rgba(6, 4, 2, 0.97);
+        border: 1px solid rgba(201, 168, 76, 0.35);
+        border-radius: 6px;
         overflow: hidden;
-        display: inline-block;
+        display: inline-flex;
+        flex-direction: column;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(201,168,76,0.1);
     }
 
     .mapa-header {
         padding: 0.6rem 1rem;
-        background: rgba(201, 168, 76, 0.08);
+        background: rgba(201, 168, 76, 0.07);
         border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
     }
 
     .mapa-title {
         font-family: 'Cinzel', serif;
         color: #c9a84c;
         font-size: 0.85rem;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.12em;
+        flex-shrink: 0;
     }
+
+    .mapa-legenda {
+        display: flex;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+    }
+
+    .leg-item {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-family: 'Crimson Text', serif;
+        color: #8a7855;
+        font-size: 0.75rem;
+    }
+
+    .leg-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    /* Oceano ao redor do mapa */
+    .mapa-ocean {
+        padding: 10px;
+        background: radial-gradient(ellipse at 10% 10%, rgba(20, 50, 90, 0.3) 0%, transparent 60%), radial-gradient(ellipse at 90% 90%, rgba(10, 30, 70, 0.25) 0%, transparent 60%), linear-gradient(135deg, #060e1a 0%, #080c18 50%, #060e1a 100%);
+        position: relative;
+    }
+
+        /* Textura de oceano com grid de linhas finas */
+        .mapa-ocean::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(rgba(30,80,140,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(30,80,140,0.08) 1px, transparent 1px);
+            background-size: 24px 24px;
+            pointer-events: none;
+        }
 
     .mapa-grid {
-        padding: 6px;
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: repeat(10, 48px);
+        grid-template-rows: repeat(10, 48px);
         gap: 2px;
+        position: relative;
+        z-index: 1;
     }
 
-    .mapa-row {
-        display: flex;
-        gap: 2px;
-    }
-
+    /* ── Células base ── */
     .celula {
         width: 48px;
         height: 48px;
         border-radius: 3px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        cursor: default;
-        transition: transform 0.15s, box-shadow 0.15s;
         position: relative;
-        border: 1px solid rgba(0,0,0,0.4);
+        cursor: default;
+        overflow: visible;
+        transition: transform 0.15s ease, z-index 0s;
+        border: 1px solid rgba(0,0,0,0.5);
     }
 
         .celula:hover {
-            transform: scale(1.1);
-            z-index: 10;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+            transform: scale(1.18);
+            z-index: 20;
+            border-color: rgba(201, 168, 76, 0.7) !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8), 0 0 0 1px rgba(201,168,76,0.4);
         }
 
-    .celula-icone {
-        font-size: 1.2rem;
-        line-height: 1;
+            .celula:hover .cel-tooltip-inner {
+                opacity: 1;
+                transform: translateY(0);
+                pointer-events: none;
+            }
+
+    /* ── Backgrounds por terreno ── */
+    .terreno-planicie-cel {
+        background: linear-gradient(135deg, #2d5a1b 0%, #3d7a25 40%, #2d6018 100%);
+        border-color: #3a6a22;
     }
 
-    .celula-civ {
-        font-family: 'Cinzel', serif;
-        font-size: 0.45rem;
-        font-weight: 700;
-        color: #fff;
-        background: rgba(0,0,0,0.65);
-        padding: 1px 3px;
+    .terreno-floresta-cel {
+        background: linear-gradient(135deg, #112a0a 0%, #1a3d10 40%, #122808 100%);
+        border-color: #1a3a10;
+    }
+
+    .terreno-montanha-cel {
+        background: linear-gradient(135deg, #2e2e3a 0%, #3e3e4e 40%, #2a2a38 100%);
+        border-color: #4a4a5a;
+    }
+
+    .terreno-rio-cel {
+        background: linear-gradient(135deg, #0e2840 0%, #1a3a5e 40%, #0e2840 100%);
+        border-color: #2a5a8a;
+    }
+
+    .terreno-deserto-cel {
+        background: linear-gradient(135deg, #5a3c10 0%, #7a5420 40%, #5a3c10 100%);
+        border-color: #8a6428;
+    }
+
+    .terreno--cel, .terreno-vazio-cel {
+        background: linear-gradient(135deg, #0e1020 0%, #141828 100%);
+        border-color: #1a1e30;
+    }
+
+    /* ── SVG de textura dentro da célula ── */
+    .cel-svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+
+    /* ── Bandeirinha de civilização ── */
+    .cel-civ-flag {
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.72);
+        border: 1px solid rgba(201, 168, 76, 0.45);
         border-radius: 2px;
-        margin-top: 2px;
+        padding: 1px 4px;
+        pointer-events: none;
+        backdrop-filter: blur(2px);
+    }
+
+    .cel-civ-nome {
+        font-family: 'Cinzel', serif;
+        font-size: 0.42rem;
+        font-weight: 700;
+        color: #e8c86a;
         letter-spacing: 0.05em;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+        white-space: nowrap;
     }
 
-    .terreno-vazio {
-        background: #1a1a2e;
-        border-color: #2a2a3e;
+    /* ── Tooltip interno ao hover ── */
+    .cel-tooltip-inner {
+        position: absolute;
+        bottom: calc(100% + 6px);
+        left: 50%;
+        transform: translateX(-50%) translateY(4px);
+        background: rgba(6,4,2,0.97);
+        border: 1px solid rgba(201,168,76,0.4);
+        border-radius: 3px;
+        padding: 4px 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1px;
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.15s, transform 0.15s;
+        pointer-events: none;
+        z-index: 30;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.8);
     }
 
-    .terreno-planicie {
-        background: linear-gradient(135deg, #2d5a1b, #3d7a25);
-        border-color: #4a8a30;
+    .tip-nome {
+        font-family: 'Cinzel', serif;
+        color: #c9a84c;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
     }
 
-    .terreno-floresta {
-        background: linear-gradient(135deg, #1a3d10, #2a5518);
-        border-color: #1a3d10;
-    }
-
-    .terreno-montanha {
-        background: linear-gradient(135deg, #3a3a4a, #4a4a5a);
-        border-color: #5a5a6a;
-    }
-
-    .terreno-rio {
-        background: linear-gradient(135deg, #1a3a6a, #2a5a9a);
-        border-color: #3a7aba;
-    }
-
-    .terreno-deserto {
-        background: linear-gradient(135deg, #6a5020, #8a7030);
-        border-color: #aa9040;
+    .tip-civ {
+        font-family: 'Crimson Text', serif;
+        color: #8a7855;
+        font-size: 0.7rem;
+        font-style: italic;
     }
 </style>
 
@@ -135,34 +319,6 @@
 
     private RegiaoModel? ObterRegiao(int x, int y)
         => Regioes.FirstOrDefault(r => r.X == x && r.Y == y);
-
-    private string ObterClasseTerreno(RegiaoModel? r)
-    {
-        if (r is null) return "terreno-vazio";
-        return r.Terreno switch
-        {
-            "Planicie" => "terreno-planicie",
-            "Floresta" => "terreno-floresta",
-            "Montanha" => "terreno-montanha",
-            "Rio" => "terreno-rio",
-            "Deserto" => "terreno-deserto",
-            _ => "terreno-vazio"
-        };
-    }
-
-    private string ObterIcone(RegiaoModel? r)
-    {
-        if (r is null) return "·";
-        return r.Terreno switch
-        {
-            "Planicie" => "🌾",
-            "Floresta" => "🌲",
-            "Montanha" => "⛰️",
-            "Rio" => "🏞️",
-            "Deserto" => "🏜️",
-            _ => "·"
-        };
-    }
 
     private string ObterTooltip(RegiaoModel? r, int x, int y)
     {
